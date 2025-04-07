@@ -18,10 +18,12 @@ class DetermineEnvironment:
     @function
     async def determine_environment(
         self,
+        source: Annotated[Directory, DefaultPath("./"), Doc("Source directory containing the project files")],
     ) -> str:
         """Determine the environment of the project"""
         self.git_container = await (
             self.git_container
+            .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
             .with_workdir("/usr/share/nginx/html")
             .with_exec(["git", "config", "--get", "remote.origin.url"])
 
