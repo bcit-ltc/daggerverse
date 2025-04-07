@@ -22,6 +22,7 @@ class DetermineEnvironment:
         """Determine the environment of the project"""
         self.git_container = await (
             self.git_container
+            .with_workdir("/usr/share/nginx/html")
             .with_exec(["git", "config", "--get", "remote.origin.url"])
 
         )
