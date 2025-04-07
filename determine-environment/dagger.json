@@ -1,0 +1,7 @@
+{
+  "name": "determine-environment",
+  "engineVersion": "v0.18.1",
+  "sdk": {
+    "source": "python"
+  }
+}
