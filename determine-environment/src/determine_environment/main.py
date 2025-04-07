@@ -1,22 +1,29 @@
-import dagger
-from dagger import dag, function, object_type
+from typing import Annotated
+from dagger import dag, field, function, object_type, Directory, Secret, DefaultPath, Doc, Container, QueryError
 
+
+def init() -> Container:
+    """Initialize the container"""
+    return (
+        dag.container()
+        .from_("alpine/git:2.47.2")
+    )
 
 @object_type
 class DetermineEnvironment:
-    @function
-    def container_echo(self, string_arg: str) -> dagger.Container:
-        """Returns a container that echoes whatever string argument is provided"""
-        return dag.container().from_("alpine:latest").with_exec(["echo", string_arg])
+    """Object type for determining the CI environment"""
+    git_container : Container = field(default=init)
+
 
     @function
-    async def grep_dir(self, directory_arg: dagger.Directory, pattern: str) -> str:
-        """Returns lines that match a pattern in the files of the provided Directory"""
-        return await (
-            dag.container()
-            .from_("alpine:latest")
-            .with_mounted_directory("/mnt", directory_arg)
-            .with_workdir("/mnt")
-            .with_exec(["grep", "-R", pattern, "."])
-            .stdout()
+    async def determine_environment(
+        self,
+    ) -> str:
+        """Determine the environment of the project"""
+        self.git_container = await (
+            self.git_container
+            .with_exec(["git", "config", "--get", "remote.origin.url"])
+
         )
+        git_url = (await self.git_container.stdout()).strip()
+        return git_url
