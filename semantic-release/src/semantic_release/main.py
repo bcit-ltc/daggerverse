@@ -64,7 +64,7 @@ class SemanticRelease:
             github_token: Annotated[Secret, Doc("Github Token")],
              ) -> None:
         print("test")
-        print(source)
+        print(source.name())
         print(branch)
         print(username)
         print(github_token)
