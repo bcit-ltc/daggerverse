@@ -1,2 +1,2 @@
-# dagger-modules
-Modules for dagger.io's Daggerverse 
+# Daggerverse
+Catalog of dagger modules
