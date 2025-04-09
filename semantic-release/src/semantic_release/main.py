@@ -69,10 +69,15 @@ class SemanticRelease:
         print(username)
         print(github_token)
         # release = SemanticRelease()
-        await source.terminal(
-            ["ls", "-la"],
+        # await source.terminal(
+        #     ["ls", "-la"],
+        # )
+        dag.container()._from("alpine:latest").with_directory(
+            "/src",
+            source,
+        ).with_workdir("/src").with_exec(
+            ["ls", "-la"]
         )
-        
 
 
     # def _set_required_plugins(self):
