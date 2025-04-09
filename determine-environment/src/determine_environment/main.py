@@ -52,8 +52,8 @@ class DetermineEnvironment:
         git_container = await (
             dag.container()
             .from_("alpine/git:2.47.2")
-            .with_new_directory("/usr/share/nginx/html/.git", source.directory(".git"))
-            .with_new_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
+            .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
+            .with_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
             .with_workdir("/usr/share/nginx/html")
         )
 
@@ -62,3 +62,23 @@ class DetermineEnvironment:
         env_map = await self._load_env_map(git_container)
 
         return await self._determine_environment(env_map, current_branch, last_commit_message)
+    
+
+    @function
+    async def test(
+        self,
+        source: Annotated[Directory, DefaultPath("./"), Doc("Source directory containing the project files")],
+        branch: Annotated[str | None, Doc("Branch name to check for the environment")],
+        mapfile: Annotated[str, Doc("Name of the JSON file containing the environment map")] = "env_map.json",
+        ) -> None:
+        """Test"""
+        print(source.directory(".git"))
+        print(source.file(mapfile))
+
+        git_container = await (
+            dag.container()
+            .from_("alpine/git:2.47.2")
+            .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
+            .with_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
+            .with_workdir("/usr/share/nginx/html")
+        )
