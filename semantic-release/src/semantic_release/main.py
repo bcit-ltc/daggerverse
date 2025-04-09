@@ -58,16 +58,16 @@ class SemanticRelease:
 
     @function
     def test(self,
-            source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")],
-            branch: Annotated[str, Doc("Branch name")],
+            # source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")],
+            # branch: Annotated[str, Doc("Branch name")],
             username: Annotated[str, Doc("Username")],
-            github_token: Annotated[Secret, Doc("Github Token")],
+            # github_token: Annotated[Secret, Doc("Github Token")],
              ) -> None:
         print("test")
-        print(source)
-        print(branch)
         print(username)
-        print(github_token)
+        # print(source)
+        # print(branch)
+        # print(github_token)
         # release = SemanticRelease()
 
 
