@@ -1,19 +1,11 @@
 import json
-from typing import Annotated, Any
-from dagger import dag, field, function, object_type, Directory, Secret, DefaultPath, Doc, Container, QueryError
+from typing import Annotated
+from dagger import dag, function, object_type, Directory, DefaultPath, Doc, Container, QueryError
 
-
-def init() -> Container:
-    """Initialize the container"""
-    return (
-        dag.container()
-        .from_("alpine/git:2.47.2")
-    )
 
 @object_type
 class DetermineEnvironment:
     """Object type for determining the CI environment"""
-    git_container: Container = field(default=init)
 
     async def _get_current_branch(self, container: Container) -> str:
         """Retrieve the current branch name"""
@@ -57,15 +49,16 @@ class DetermineEnvironment:
         mapfile: Annotated[str, Doc("Name of the JSON file containing the environment map")] = "env_map.json",
     ) -> str:
         """Determine the environment of the project"""
-        temp_git_container = await (
-            self.git_container
+        git_container = await (
+            dag.container()
+            .from_("alpine/git:2.47.2")
             .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
             .with_workdir("/usr/share/nginx/html")
             .with_file(mapfile, source.file(mapfile))
         )
 
-        current_branch = branch or await self._get_current_branch(temp_git_container)
-        last_commit_message = await self._get_last_commit_message(temp_git_container)
-        env_map = await self._load_env_map(temp_git_container, mapfile)
+        current_branch = branch or await self._get_current_branch(git_container)
+        last_commit_message = await self._get_last_commit_message(git_container)
+        env_map = await self._load_env_map(git_container, mapfile)
 
         return await self._determine_environment(env_map, current_branch, last_commit_message)
