@@ -1,5 +1,5 @@
 ---
-name: question.md
+name: Question
 about: Ask a question or request clarification.
 title: ''
 labels: ''

@@ -1,5 +1,5 @@
 ---
-name: bug_report.md
+name: Bug Report
 about: Report a reproducible issue in the project
 title: ''
 labels: ''
