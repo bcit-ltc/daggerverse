@@ -70,8 +70,7 @@ class SemanticRelease:
         print(github_token)
         # release = SemanticRelease()
         await source.terminal(
-            "ls",
-            "-la",
+            ["ls", "-la"],
         )
         
 
