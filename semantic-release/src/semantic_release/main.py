@@ -57,19 +57,23 @@ class SemanticRelease:
         # print(json.dumps(self.releaserc.to_dict(), indent=2))  # Debugging line
 
     @function
-    def test(self,
+    async def test(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")],
             branch: Annotated[str, Doc("Branch name")],
             username: Annotated[str, Doc("Username")],
             github_token: Annotated[Secret, Doc("Github Token")],
              ) -> None:
         print("test")
-        print(source)
+        print(await source.name())
         print(branch)
         print(username)
         print(github_token)
         # release = SemanticRelease()
-
+        await source.terminal(
+            "ls",
+            "-la",
+        )
+        
 
 
     # def _set_required_plugins(self):
