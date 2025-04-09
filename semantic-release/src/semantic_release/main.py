@@ -72,7 +72,7 @@ class SemanticRelease:
         # await source.terminal(
         #     ["ls", "-la"],
         # )
-        await dag.container()._from("alpine:latest").with_directory(
+        await dag.container().from_("alpine:latest").with_directory(
             "/src",
             source,
         ).with_workdir("/src").with_exec(
