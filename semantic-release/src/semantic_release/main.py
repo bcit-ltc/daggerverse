@@ -69,7 +69,11 @@ class SemanticRelease:
         print(username)
         print(github_token)
         # release = SemanticRelease()
-
+        await source.terminal(
+            "ls",
+            "-la",
+        )
+        
 
 
     # def _set_required_plugins(self):
