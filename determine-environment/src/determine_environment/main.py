@@ -17,9 +17,9 @@ class DetermineEnvironment:
         container = await container.with_exec(["git", "log", "-1", "--pretty=%B"])
         return (await container.stdout()).strip()
 
-    async def _load_env_map(self, container: Container, mapfile: str) -> dict:
+    async def _load_env_map(self, container: Container) -> dict:
         """Load and parse the environment map JSON file"""
-        container = await container.with_exec(["cat", mapfile])
+        container = await container.with_exec(["cat", "/usr/share/nginx/html/env_map.json"])
         map_str = (await container.stdout()).strip()
         try:
             env_map = json.loads(map_str)
@@ -54,11 +54,11 @@ class DetermineEnvironment:
             .from_("alpine/git:2.47.2")
             .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
             .with_workdir("/usr/share/nginx/html")
-            .with_file(mapfile, source.file(mapfile))
+            .with_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
         )
 
         current_branch = branch or await self._get_current_branch(git_container)
         last_commit_message = await self._get_last_commit_message(git_container)
-        env_map = await self._load_env_map(git_container, mapfile)
+        env_map = await self._load_env_map(git_container)
 
         return await self._determine_environment(env_map, current_branch, last_commit_message)
