@@ -52,9 +52,9 @@ class DetermineEnvironment:
         git_container = await (
             dag.container()
             .from_("alpine/git:2.47.2")
-            .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
+            .with_new_directory("/usr/share/nginx/html/.git", source.directory(".git"))
+            .with_new_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
             .with_workdir("/usr/share/nginx/html")
-            .with_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
         )
 
         current_branch = branch or await self._get_current_branch(git_container)
