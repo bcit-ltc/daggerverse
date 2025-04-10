@@ -47,19 +47,35 @@ class DetermineEnvironment:
         source: Annotated[Directory, DefaultPath("./"), Doc("Source directory containing the project files")],
         branch: Annotated[str | None, Doc("Branch name to check for the environment")],
         mapfile: Annotated[str, Doc("Name of the JSON file containing the environment map")] = "env_map.json",
+        mapstring: Annotated[str | None, Doc("JSON string containing the environment map")] = None,
     ) -> str:
         """Determine the environment of the project"""
+        
         git_container = await (
             dag.container()
             .from_("alpine/git:2.47.2")
             .with_directory("/usr/share/nginx/html/.git", source.directory(".git"))
-            .with_file("/usr/share/nginx/html/env_map.json", source.file(mapfile))
             .with_workdir("/usr/share/nginx/html")
         )
-
+        
         current_branch = branch or await self._get_current_branch(git_container)
         last_commit_message = await self._get_last_commit_message(git_container)
-        env_map = await self._load_env_map(git_container)
+
+        if mapstring:
+            try:
+                env_map = json.loads(mapstring)
+            except json.JSONDecodeError as e:
+                raise QueryError(f"Failed to parse JSON: {e}")
+            if not isinstance(env_map, dict):
+                raise QueryError("Environment map is not a valid JSON object")
+        else:
+            if mapfile:
+                git_container = await git_container.with_file(mapfile, source.file(mapfile))
+                env_map = await self._load_env_map(git_container)
+            else:
+                # error if no mapfile is provided
+                raise QueryError("No mapfile provided")
+            
 
         return await self._determine_environment(env_map, current_branch, last_commit_message)
     
