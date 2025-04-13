@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional, Union
+import json
 
 class ReleaseRC:
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -33,6 +34,10 @@ class ReleaseRC:
 
     def to_dict(self) -> Dict[str, Any]:
         return self.data
+    
+    def to_string(self) -> str:
+        """Convert the ReleaseRC object to a string representation."""
+        return (json.dumps(self.data, indent=2))
 
     def set_dry_run(self, value: bool):
         """Set the dryRun field."""
