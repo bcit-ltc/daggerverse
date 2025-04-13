@@ -61,15 +61,15 @@ class SemanticRelease:
 
         # Create a container for running semantic release
         container = await self.semantic_release_container(source)
-        # Set environment variables for the container
+
         await container.with_new_file(
             ".releaserc", contents=self.releaserc.to_string()
         ).with_exec(
             ["ls", "-la"]
         ).with_exec(
             ["cat", ".releaserc"]
-        ).stdout()
-
+        ).with_exec(
+            ["npx", "semantic-release"])
 
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
@@ -88,6 +88,6 @@ class SemanticRelease:
 
     async def semantic_release_container(self, source: Directory) -> Container:
         """Get the container for running semantic release."""
-        return await dag.container().from_("alpine:latest").with_directory(
+        return await dag.container().from_("ghcr.io/bcit-ltc/semantic-release:latest").with_directory(
             "/app", source
         ).with_workdir("/app")
