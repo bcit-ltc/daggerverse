@@ -48,8 +48,9 @@ class SemanticRelease:
             print("Running in GitHub Actions")
             self.ci_provider = CiProvider.GITHUB
         else:
-            print("Running locally")
+            print("Running locally, Semantic Release skipped")
             self.ci_provider = CiProvider.NONE
+            return None
 
         self.branch = branch
         self.username = username
@@ -68,8 +69,10 @@ class SemanticRelease:
             ["ls", "-la"]
         ).with_exec(
             ["cat", ".releaserc"]
-        ).with_exec(
-            ["npx", "semantic-release"])
+        ).with_secret_variable("GITHUB_TOKEN", github_token
+        ).with_env_variable("GITHUB_USERNAME", self.username
+        ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
+        ).with_exec(["npx", "semantic-release"])
 
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
