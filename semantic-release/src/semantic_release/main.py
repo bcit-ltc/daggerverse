@@ -44,8 +44,6 @@ class SemanticRelease:
             username: Annotated[str, Doc("Github Username")],  # GitHub username with default value
             branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
             ) -> None:
-        
-        print(os.environ)
 
         if github_token is not None:
             print("GITHUB_TOKEN detected")
