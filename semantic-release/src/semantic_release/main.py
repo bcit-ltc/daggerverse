@@ -40,13 +40,13 @@ class SemanticRelease:
     @function
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
-            github_token: Annotated[Secret, Doc("Github Token")],
+            github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")],  # GitHub username with default value
             branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
             ) -> None:
         
         print(os.environ)
-        
+
         if github_token is not None:
             print("GITHUB_TOKEN detected")
             print("Running in GitHub Actions")
