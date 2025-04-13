@@ -40,7 +40,7 @@ class SemanticRelease:
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")],  # GitHub username
-            branch: Annotated[str, Doc("Branch")],  # Default branch name
+            # branch: Annotated[str, Doc("Branch")],  # Default branch name
             repository: Annotated[str, Doc("Repository")] # GitHub repository
             ) -> None:
 
@@ -53,7 +53,7 @@ class SemanticRelease:
             self.ci_provider = CiProvider.NONE
             return None
 
-        self.branch = branch
+        self.branch = "main"
         self.username = username
         self.github_token = github_token
 
