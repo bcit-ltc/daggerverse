@@ -41,7 +41,7 @@ class SemanticRelease:
             github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")],  # GitHub username
             # branch: Annotated[str, Doc("Branch")],  # Default branch name
-            repository: Annotated[str, Doc("Repository")] # GitHub repository
+            # repository: Annotated[str, Doc("Repository")] # GitHub repository
             ) -> None:
 
         if github_token is not None:
