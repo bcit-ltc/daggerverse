@@ -28,12 +28,12 @@ class SemanticRelease:
     @function
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
-            branch: Annotated[str, Doc("Branch name")], # in which branch should we run the release
-            username: Annotated[str, Doc("Username")],  #  GitHub username
-            # repository_url: Annotated[str, Doc("Repository URL")],  # GitHub repository URL
-            github_token: Annotated[Secret, Doc("Github Token")], # GitHub token
-             ) -> None:
-        
+            github_token: Annotated[Secret, Doc("Github Token")],
+            username: Annotated[str, Doc("Github Username")],  # GitHub username with default value
+            branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
+            ) -> None:
+
+        print(f"Running semantic release for user: {username}")
         releaserc = ReleaseRC()
         releaserc.add_branch(branch)
         releaserc.add_plugin("@semantic-release/commit-analyzer")
