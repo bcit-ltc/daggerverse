@@ -67,7 +67,7 @@ class SemanticRelease:
         ).with_exec(
             ["ls", "-la"]
         ).with_exec(
-            ["cat .releaserc"]
+            ["cat", ".releaserc"]
         ).stdout()
 
 
