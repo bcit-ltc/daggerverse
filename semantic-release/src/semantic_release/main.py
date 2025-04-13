@@ -44,7 +44,7 @@ class SemanticRelease:
         # Create a container for running semantic release
         container = await self.semantic_release_container(source)
         # Set environment variables for the container
-        container.with_new_file(
+        await container.with_new_file(
             "app/.releaserc", contents=releaserc.to_string()
         ).with_exec(
             ["ls", "-la"]
