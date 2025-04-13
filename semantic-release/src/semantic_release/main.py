@@ -32,8 +32,6 @@ class SemanticRelease:
             username: Annotated[str, Doc("Github Username")],  # GitHub username with default value
             branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
             ) -> None:
-
-        print(f"Running semantic release for user: {username}")
         releaserc = ReleaseRC()
         releaserc.add_branch(branch)
         releaserc.add_plugin("@semantic-release/commit-analyzer")
@@ -41,15 +39,21 @@ class SemanticRelease:
         releaserc.set_dry_run(True)
         releaserc.set_ci(True)
         releaserc.set_debug(True)
-        print(releaserc.to_string())
+        # print(releaserc.to_string())
 
-
-    async def get_container(self) -> Container:
-        """Get the container for running semantic release."""
-        return await dag.container().from_("alpine:latest").with_directory(
-            "/src",
-            self.source,
-        ).with_workdir("/src").with_exec(
+        # Create a container for running semantic release
+        container = await self.semantic_release_container(source)
+        # Set environment variables for the container
+        container.with_new_file(
+            "app/.releaserc", contents=releaserc.to_string()
+        ).with_exec(
             ["ls", "-la"]
         ).stdout()
+
+    async def semantic_release_container(self, source: Directory) -> Container:
+        """Get the container for running semantic release."""
+        return await dag.container().from_("alpine:latest").with_directory(
+            "/app", source
+        ).with_workdir("/app")
+    
     
