@@ -24,14 +24,12 @@ from dagger import Container, dag, Directory, Doc, field, function, object_type,
 from enum import Enum
 
 from .releaserc import ReleaseRC
-import os
 
 @enum_type
 class CiProvider(Enum):
     NONE = "none"
     UNKNOWN = "unknown"
     GITHUB = "github"
-
 
 
 @object_type
@@ -68,6 +66,8 @@ class SemanticRelease:
             ".releaserc", contents=self.releaserc.to_string()
         ).with_exec(
             ["ls", "-la"]
+        ).with_exec(
+            ["cat .releaserc"]
         ).stdout()
 
 
