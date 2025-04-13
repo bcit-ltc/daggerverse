@@ -45,12 +45,12 @@ class SemanticRelease:
             branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
             ) -> None:
         
-        if os.getenv("CI") == "true" or os.getenv("GITHUB_ACTIONS") == "true":
-            print("Running in CI environment")
-            self.ci_provider = CiProvider.CI
-            if os.getenv("GITHUB_ACTIONS") == "true":
-                print("Running in GitHub Actions")
-                self.ci_provider = CiProvider.GITHUB
+        print(os.environ)
+        
+        if github_token is not None:
+            print("GITHUB_TOKEN detected")
+            print("Running in GitHub Actions")
+            self.ci_provider = CiProvider.GITHUB
         else:
             print("Running locally")
             self.ci_provider = CiProvider.NONE
