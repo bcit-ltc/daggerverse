@@ -45,8 +45,8 @@ class SemanticRelease:
             branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
             ) -> None:
         
-        if os.getenv("CI") == "true":
-            print("Running in CI")
+        if os.getenv("CI") == "true" or os.getenv("GITHUB_ACTIONS") == "true":
+            print("Running in CI environment")
             self.ci_provider = CiProvider.CI
             if os.getenv("GITHUB_ACTIONS") == "true":
                 print("Running in GitHub Actions")
@@ -62,7 +62,7 @@ class SemanticRelease:
         # Configure release parameters based on the CI provider
         self._configure_release_params()
         print(f"Configured release parameters: {self.releaserc.to_string()}")
-        
+
         # Create a container for running semantic release
         container = await self.semantic_release_container(source)
         # Set environment variables for the container
