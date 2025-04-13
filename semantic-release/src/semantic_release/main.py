@@ -39,8 +39,9 @@ class SemanticRelease:
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
-            username: Annotated[str, Doc("Github Username")],  # GitHub username with default value
-            branch: Annotated[str, Doc("Branch")] = "main",  # Default branch name
+            username: Annotated[str, Doc("Github Username")],  # GitHub username
+            branch: Annotated[str, Doc("Branch")],  # Default branch name
+            repository: Annotated[str, Doc("Repository")] # GitHub repository
             ) -> None:
 
         if github_token is not None:
@@ -74,6 +75,7 @@ class SemanticRelease:
         ).with_env_variable("GITHUB_ACTOR", self.username
         ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
         ).with_env_variable("GITHUB_ACTIONS", "true"
+        ).with_env_variable("GITHUB_REPOSITORY", "BCIT-LTC/throwaway"
         ).with_exec(["npx", "semantic-release"])
 
     def _configure_release_params(self):
