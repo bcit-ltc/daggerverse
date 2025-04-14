@@ -17,17 +17,17 @@ class DetermineEnvironment:
         container = await container.with_exec(["git", "log", "-1", "--pretty=%B"])
         return (await container.stdout()).strip()
 
-    async def _load_env_map(self, container: Container) -> dict:
+    async def _load_json_file(self, container: Container, file_name: str) -> dict:
         """Load and parse the environment map JSON file"""
-        container = await container.with_exec(["cat", "/usr/share/nginx/html/env_map.json"])
+        container = await container.with_exec(["cat", "/usr/share/nginx/html/" + file_name])
         map_str = (await container.stdout()).strip()
         try:
-            env_map = json.loads(map_str)
+            json_object = json.loads(map_str)
         except json.JSONDecodeError as e:
             raise QueryError(f"Failed to parse JSON: {e}")
-        if not isinstance(env_map, dict):
+        if not isinstance(json_object, dict):
             raise QueryError("Environment map is not a valid JSON object")
-        return env_map
+        return json_object
 
     async def _determine_environment(
         self, env_map: dict, branch: str, last_commit_message: str
@@ -71,11 +71,10 @@ class DetermineEnvironment:
         else:
             if mapfile:
                 git_container = await git_container.with_file(mapfile, source.file(mapfile))
-                env_map = await self._load_env_map(git_container)
+                env_map = await self._load_json_file(git_container, mapfile)
             else:
                 # error if no mapfile is provided
                 raise QueryError("No mapfile provided")
             
 
         return await self._determine_environment(env_map, current_branch, last_commit_message)
-    

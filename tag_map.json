@@ -1,0 +1,20 @@
+{
+    "review": {
+        "rules": [
+            { "format": "review--{tag}--{commit_hash}.{timestamp}" }
+        ]
+    },
+    "latest": {
+        "rules": [
+            { "format": "{tag}-{date}--{commit_hash}.{timestamp}" }
+        ]
+    },
+    "stable": {
+        "rules": [
+            { "format": "{tag}" },
+            { "format": "{tag}-{date}--{commit_hash}.{timestamp}" },
+            { "format": "latest" },
+            { "format": "stable" }
+        ]
+    }
+}
