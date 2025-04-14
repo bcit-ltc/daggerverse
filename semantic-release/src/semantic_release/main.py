@@ -31,7 +31,8 @@ class CiProvider(Enum):
     UNKNOWN = "unknown"
     GITHUB = "github"
 
-SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release@sha256:1dd665fa669babd4ec896bf962d69058cd881aad0afa219b58ff5ec8930468b3"
+SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release:latest"
+VERSION_OUTPUT_FILE = "version.txt"
 
 @object_type
 class SemanticRelease:
@@ -75,27 +76,15 @@ class SemanticRelease:
     def configure_release_params(self):
         self.releaserc.add_branch(self.branch)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
-        
-        release_notes_generator = [
-            "@semantic-release/release-notes-generator",
-            {
-                "preset": 'conventionalcommits',
-                "writerOpts": {
-                "headerPartial": '## 🚀 Custom Release Notes\n\n',
-                "footerPartial": '\n---\nThanks for using our project! 🎉',
-                },
-            },
-        ]
+        self.releaserc.add_plugin("@semantic-release/release-notes-generator")
 
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "prepareCmd": "echo 'Preparing release...'",
-                "publishCmd": "echo 'Publishing release...'"
+                "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {VERSION_OUTPUT_FILE}"
             }
         ]
-
-        self.releaserc.add_plugin(release_notes_generator)
+        
         self.releaserc.add_plugin(exec_plugin)
 
         """Configure release parameters based on the CI provider."""
@@ -128,12 +117,13 @@ class SemanticRelease:
             "/app", source
         ).with_workdir("/app")
 
+
     async def github_actions_runner(self, container: Container) -> Container:
         """Run semantic release in GitHub Actions. This mimics the GitHub Actions environment
         by setting the GITHUB_REF and GITHUB_ACTIONS environment variables.
         This is needed by semantic release to determine the current branch and to indicate that
         this is a GitHub Actions environment"""
-        await container.with_new_file(
+        return await container.with_new_file(
             ".releaserc", contents=self.releaserc.to_string()
         ).with_exec(
             ["ls", "-la"]
@@ -144,4 +134,8 @@ class SemanticRelease:
         ).with_env_variable("GITHUB_ACTOR", self.username
         ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
         ).with_env_variable("GITHUB_ACTIONS", "true"
-        ).with_exec(["npx", "semantic-release"])
+        ).with_exec(["npx", "semantic-release"]
+        ).with_exec(["cat", VERSION_OUTPUT_FILE]
+        ).with_exec(["echo", "Semantic Release complete"]
+        ).with_exec(["echo", "Version: $(cat version.txt)"]
+        )
