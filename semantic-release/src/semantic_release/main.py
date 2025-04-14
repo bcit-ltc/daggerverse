@@ -22,7 +22,6 @@ from typing import Annotated, Self
 from dagger import Container, dag, Directory, Doc, field, function, object_type, Secret, DefaultPath, enum_type
 
 from enum import Enum
-
 from .releaserc import ReleaseRC
 
 @enum_type
@@ -43,8 +42,6 @@ class SemanticRelease:
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")],  # GitHub username
-            # branch: Annotated[str, Doc("Branch")],  # Default branch name
-            # repository: Annotated[str, Doc("Repository")] # GitHub repository
             ) -> str:
 
         if github_token is not None:
