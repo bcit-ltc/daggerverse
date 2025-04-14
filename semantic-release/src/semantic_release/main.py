@@ -57,16 +57,16 @@ class SemanticRelease:
             return None
 
         # Configure release parameters based on the CI provider
-        self.configure_release_params()
+        self._configure_release_params()
         print(f"Configured release parameters: {self.releaserc.to_string()}")
 
         # Create a container for running semantic release
-        container = await self.prepare_semantic_release_container(source)
+        container = await self._prepare_semantic_release_container(source)
 
         # Run semantic release for GitHub Actions
         if self.ci_provider == CiProvider.GITHUB:
             print("Running in GitHub Actions")
-            container = await self.github_actions_runner(container)
+            container = await self._github_actions_runner(container)
         else:
             print("Running locally, Semantic Release skipped")
             return None
@@ -77,7 +77,7 @@ class SemanticRelease:
         print(f"Version: {version}")
         return version
 
-    def configure_release_params(self):
+    def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
         self.releaserc.add_plugin("@semantic-release/release-notes-generator")
@@ -113,7 +113,7 @@ class SemanticRelease:
             self.releaserc.set_ci(False)
 
 
-    async def prepare_semantic_release_container(self, source: Directory) -> Container:
+    async def _prepare_semantic_release_container(self, source: Directory) -> Container:
         """Prepare the container for running semantic release.
         This functions specifies the container image and the working directory and
         copies the source directory to the container"""
@@ -122,7 +122,7 @@ class SemanticRelease:
         ).with_workdir("/app")
 
 
-    async def github_actions_runner(self, container: Container) -> Container:
+    async def _github_actions_runner(self, container: Container) -> Container:
         """Run semantic release in GitHub Actions. This mimics the GitHub Actions environment
         by setting the GITHUB_REF and GITHUB_ACTIONS environment variables.
         This is needed by semantic release to determine the current branch and to indicate that
