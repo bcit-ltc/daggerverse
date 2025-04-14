@@ -75,7 +75,6 @@ class SemanticRelease:
         ).with_env_variable("GITHUB_ACTOR", self.username
         ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
         ).with_env_variable("GITHUB_ACTIONS", "true"
-        ).with_env_variable("GITHUB_REPOSITORY", "BCIT-LTC/throwaway"
         ).with_exec(["npx", "semantic-release"])
 
     def _configure_release_params(self):
