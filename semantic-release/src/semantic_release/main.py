@@ -79,7 +79,16 @@ class SemanticRelease:
     
         """Configure release parameters based on the CI provider."""
         if self.ci_provider == CiProvider.GITHUB:
-            self.releaserc.add_plugin("@semantic-release/github")
+            # see https://github.com/semantic-release/github?tab=readme-ov-file#options
+            # for more information on the options
+            github_plugin = [
+                "@semantic-release/github",
+                {
+                    "addReleases": "top",
+                }
+            ]
+            
+            self.releaserc.add_plugin(github_plugin)
             self.releaserc.set_dry_run(False)
             self.releaserc.set_debug(False)
             self.releaserc.set_ci(True)
