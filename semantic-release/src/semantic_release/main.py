@@ -77,6 +77,18 @@ class SemanticRelease:
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
         self.releaserc.add_plugin("@semantic-release/release-notes-generator")
     
+        custom_plugin = [
+            "@semantic-release/exec",
+            {
+                "prepareCmd": "echo 'Preparing release...'",
+                "publishCmd": "echo 'Publishing release...'",
+                "successCmd": "echo 'Release successful!'",
+                "failCmd": "echo 'Release failed!'",
+            }
+        ]
+
+        self.releaserc.add_plugin(custom_plugin)
+
         """Configure release parameters based on the CI provider."""
         if self.ci_provider == CiProvider.GITHUB:
             # see https://github.com/semantic-release/github?tab=readme-ov-file#options
@@ -85,15 +97,6 @@ class SemanticRelease:
                 "@semantic-release/github",
                 {
                     "addReleases": "top",
-                    "releasedLabels": {
-                        "releases": 
-                        [
-                            {
-                                "name": "Release",
-                                "url": "github.com",
-                            },
-                        ]
-                    },
                 }
             ]
 
