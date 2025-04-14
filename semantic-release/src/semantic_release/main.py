@@ -75,19 +75,28 @@ class SemanticRelease:
     def configure_release_params(self):
         self.releaserc.add_branch(self.branch)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
-        self.releaserc.add_plugin("@semantic-release/release-notes-generator")
-    
-        custom_plugin = [
+        
+        release_notes_generator = [
+            "@semantic-release/release-notes-generator",
+            {
+                "preset": 'conventionalcommits',
+                "writerOpts": {
+                "headerPartial": '## 🚀 Custom Release Notes\n\n',
+                "footerPartial": '\n---\nThanks for using our project! 🎉',
+                },
+            },
+        ]
+
+        exec_plugin = [
             "@semantic-release/exec",
             {
                 "prepareCmd": "echo 'Preparing release...'",
-                "publishCmd": "echo 'Publishing release...'",
-                "successCmd": "echo 'Release successful!'",
-                "failCmd": "echo 'Release failed!'",
+                "publishCmd": "echo 'Publishing release...'"
             }
         ]
-
-        self.releaserc.add_plugin(custom_plugin)
+        
+        self.releaserc.add_plugin(release_notes_generator)
+        self.releaserc.add_plugin(exec_plugin)
 
         """Configure release parameters based on the CI provider."""
         if self.ci_provider == CiProvider.GITHUB:
