@@ -48,14 +48,13 @@ class SemanticRelease:
             print("GITHUB_TOKEN detected")
             print("Running in GitHub Actions")
             self.ci_provider = CiProvider.GITHUB
+            self.github_token = github_token
+            self.branch = "main"
+            self.username = username
         else:
             print("Running locally, Semantic Release skipped")
             self.ci_provider = CiProvider.NONE
             return None
-
-        self.branch = "main"
-        self.username = username
-        self.github_token = github_token
 
         # Configure release parameters based on the CI provider
         self._configure_release_params()
@@ -64,18 +63,13 @@ class SemanticRelease:
         # Create a container for running semantic release
         container = await self.semantic_release_container(source)
 
-        await container.with_new_file(
-            ".releaserc", contents=self.releaserc.to_string()
-        ).with_exec(
-            ["ls", "-la"]
-        ).with_exec(
-            ["cat", ".releaserc"]
-        ).with_secret_variable("GITHUB_TOKEN", github_token
-        ).with_env_variable("GITHUB_USERNAME", self.username
-        ).with_env_variable("GITHUB_ACTOR", self.username
-        ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
-        ).with_env_variable("GITHUB_ACTIONS", "true"
-        ).with_exec(["npx", "semantic-release"])
+        # Run semantic release for GitHub Actions
+        if self.ci_provider == CiProvider.GITHUB:
+            print("Running in GitHub Actions")
+            container = await self.github_actions_runner(container)
+        else:
+            print("Running locally, Semantic Release skipped")
+            return None
 
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
@@ -85,15 +79,38 @@ class SemanticRelease:
         """Configure release parameters based on the CI provider."""
         if self.ci_provider == CiProvider.GITHUB:
             self.releaserc.add_plugin("@semantic-release/github")
+            self.releaserc.set_dry_run(False)
+            self.releaserc.set_debug(False)
             self.releaserc.set_ci(True)
         else:
-            print("No CI provider detected. Skipping GitHub configuration.")
+            print("No CI provider detected, running in local mode")
             self.releaserc.set_dry_run(True)
             self.releaserc.set_debug(True)
+            self.releaserc.set_ci(False)
 
 
-    async def semantic_release_container(self, source: Directory) -> Container:
-        """Get the container for running semantic release."""
+    async def prepare_semantic_release_container(self, source: Directory) -> Container:
+        """Prepare the container for running semantic release.
+        This functions specifies the container image and the working directory and
+        copies the source directory to the container"""
         return await dag.container().from_("ghcr.io/bcit-ltc/semantic-release:latest").with_directory(
             "/app", source
         ).with_workdir("/app")
+
+    async def github_actions_runner(self, container: Container) -> Container:
+        """Run semantic release in GitHub Actions. This mimics the GitHub Actions environment
+        by setting the GITHUB_REF and GITHUB_ACTIONS environment variables.
+        This is needed by semantic release to determine the current branch and to indicate that
+        this is a GitHub Actions environment"""
+        await container.with_new_file(
+            ".releaserc", contents=self.releaserc.to_string()
+        ).with_exec(
+            ["ls", "-la"]
+        ).with_exec(
+            ["cat", ".releaserc"]
+        ).with_secret_variable("GITHUB_TOKEN", self.github_token
+        ).with_env_variable("GITHUB_USERNAME", self.username
+        ).with_env_variable("GITHUB_ACTOR", self.username
+        ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
+        ).with_env_variable("GITHUB_ACTIONS", "true"
+        ).with_exec(["npx", "semantic-release"])
