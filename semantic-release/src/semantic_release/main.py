@@ -31,7 +31,7 @@ class CiProvider(Enum):
     UNKNOWN = "unknown"
     GITHUB = "github"
 
-SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release:latest"
+SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release@sha256:1dd665fa669babd4ec896bf962d69058cd881aad0afa219b58ff5ec8930468b3"
 
 @object_type
 class SemanticRelease:
@@ -94,7 +94,7 @@ class SemanticRelease:
                 "publishCmd": "echo 'Publishing release...'"
             }
         ]
-        
+
         self.releaserc.add_plugin(release_notes_generator)
         self.releaserc.add_plugin(exec_plugin)
 
