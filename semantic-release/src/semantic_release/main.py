@@ -31,6 +31,7 @@ class CiProvider(Enum):
     UNKNOWN = "unknown"
     GITHUB = "github"
 
+SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release:latest"
 
 @object_type
 class SemanticRelease:
@@ -57,11 +58,11 @@ class SemanticRelease:
             return None
 
         # Configure release parameters based on the CI provider
-        self._configure_release_params()
+        self.configure_release_params()
         print(f"Configured release parameters: {self.releaserc.to_string()}")
 
         # Create a container for running semantic release
-        container = await self.semantic_release_container(source)
+        container = await self.prepare_semantic_release_container(source)
 
         # Run semantic release for GitHub Actions
         if self.ci_provider == CiProvider.GITHUB:
@@ -71,7 +72,7 @@ class SemanticRelease:
             print("Running locally, Semantic Release skipped")
             return None
 
-    def _configure_release_params(self):
+    def configure_release_params(self):
         self.releaserc.add_branch(self.branch)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
         self.releaserc.add_plugin("@semantic-release/release-notes-generator")
@@ -93,7 +94,7 @@ class SemanticRelease:
         """Prepare the container for running semantic release.
         This functions specifies the container image and the working directory and
         copies the source directory to the container"""
-        return await dag.container().from_("ghcr.io/bcit-ltc/semantic-release:latest").with_directory(
+        return await dag.container().from_(SEMANTIC_RELEASE_IMAGE).with_directory(
             "/app", source
         ).with_workdir("/app")
 
