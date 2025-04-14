@@ -87,10 +87,12 @@ class SemanticRelease:
                     "addReleases": "top",
                     "releasedLabels": {
                         "releases": 
+                        [
                             {
                                 "name": "Release",
                                 "url": "github.com",
                             },
+                        ]
                     },
                 }
             ]
