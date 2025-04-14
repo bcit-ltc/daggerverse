@@ -85,9 +85,16 @@ class SemanticRelease:
                 "@semantic-release/github",
                 {
                     "addReleases": "top",
+                    "releasedLabels": {
+                        "releases": 
+                            {
+                                "name": "Release",
+                                "url": "github.com",
+                            },
+                    },
                 }
             ]
-            
+
             self.releaserc.add_plugin(github_plugin)
             self.releaserc.set_dry_run(False)
             self.releaserc.set_debug(False)
