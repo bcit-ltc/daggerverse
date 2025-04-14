@@ -37,6 +37,7 @@ VERSION_OUTPUT_FILE = "version.txt"
 @object_type
 class SemanticRelease:
     releaserc = ReleaseRC()
+    version = "0.0.0"
     @function
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
@@ -44,7 +45,7 @@ class SemanticRelease:
             username: Annotated[str, Doc("Github Username")],  # GitHub username
             # branch: Annotated[str, Doc("Branch")],  # Default branch name
             # repository: Annotated[str, Doc("Repository")] # GitHub repository
-            ) -> None:
+            ) -> str:
 
         if github_token is not None:
             print("GITHUB_TOKEN detected")
@@ -72,6 +73,12 @@ class SemanticRelease:
         else:
             print("Running locally, Semantic Release skipped")
             return None
+        
+        #Getting the version from the output file
+        version = await container.with_exec(["cat", VERSION_OUTPUT_FILE]).stdout()
+
+        print(f"Version: {version}")
+        return version
 
     def configure_release_params(self):
         self.releaserc.add_branch(self.branch)
@@ -134,8 +141,4 @@ class SemanticRelease:
         ).with_env_variable("GITHUB_ACTOR", self.username
         ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
         ).with_env_variable("GITHUB_ACTIONS", "true"
-        ).with_exec(["npx", "semantic-release"]
-        ).with_exec(["cat", VERSION_OUTPUT_FILE]
-        ).with_exec(["echo", "Semantic Release complete"]
-        ).with_exec(["echo", "Version: $(cat version.txt)"]
-        )
+        ).with_exec(["npx", "semantic-release"])
