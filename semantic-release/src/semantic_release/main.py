@@ -73,6 +73,7 @@ class SemanticRelease:
         ).with_secret_variable("GITHUB_TOKEN", github_token
         ).with_env_variable("GITHUB_USERNAME", self.username
         ).with_env_variable("GITHUB_ACTOR", self.username
+        ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
         ).with_env_variable("GITHUB_ACTIONS", "true"
         ).with_exec(["npx", "semantic-release"])
 
