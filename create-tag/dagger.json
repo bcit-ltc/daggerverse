@@ -1,5 +1,5 @@
 {
-  "name": "determine-tag",
+  "name": "create-tag",
   "engineVersion": "v0.18.3",
   "sdk": {
     "source": "python"

@@ -1,20 +1,22 @@
 {
     "review": {
         "rules": [
-            { "format": "review--{tag}--{commit_hash}.{timestamp}" }
+            { "format": "{env}-{version}-{commit_hash}.{timestamp}" }
         ]
     },
     "latest": {
         "rules": [
-            { "format": "{tag}-{date}--{commit_hash}.{timestamp}" }
+            { "format": "{version}-{date}-{commit_hash}.{timestamp}" },
+            { "format": "{env}" }
+
         ]
     },
     "stable": {
         "rules": [
-            { "format": "{tag}" },
-            { "format": "{tag}-{date}--{commit_hash}.{timestamp}" },
+            { "format": "{version}" },
+            { "format": "{version}-{date}-{commit_hash}.{timestamp}" },
             { "format": "latest" },
-            { "format": "stable" }
+            { "format": "{env}" }
         ]
     }
 }
