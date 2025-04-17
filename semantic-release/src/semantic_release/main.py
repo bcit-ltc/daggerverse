@@ -78,10 +78,10 @@ class SemanticRelease:
         # next_version = await container.with_exec(["cat", NEXT_VERSION_FILE]).stdout()
         output_directory = container.directory(APP_DIR)
         # next_version_file = output_directory.file(NEXT_VERSION_FILE)
-        current_version_file = output_directory.file(CURRENT_VERSION_FILE)
+        last_release_file = output_directory.file(LAST_RELEASE_FILE)
         try:
             # If the NEXT_VERSION file doesn't exist, try to get CURRENT_VERSION_FILE
-            currentstring = (await current_version_file.contents()).strip()
+            currentstring = (await last_release_file.contents()).strip()
             return currentstring
         except QueryError:  # Catch the error if the file doesn't exist
             return "0.0.0"
@@ -108,7 +108,7 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "verifyReleaseCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}"
+                "analyzeCommitsCmd": f"echo ${{lastRelease.version}} > {LAST_RELEASE_FILE}",
             }
         ]
         self.releaserc.add_plugin(exec_plugin)
