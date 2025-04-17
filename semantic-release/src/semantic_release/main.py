@@ -18,11 +18,11 @@ project, maintained by its contributors. All semantic-release core functionaliti
 [license and guidelines](https://github.com/semantic-release/semantic-release/blob/master/LICENSE).
 """
 
-from typing import Annotated, Self
-from dagger import Container, dag, Directory, Doc, field, function, object_type, Secret, DefaultPath, enum_type
-
+from typing import Annotated
 from enum import Enum
+from dagger import Container, dag, Directory, Doc, function, object_type, Secret, DefaultPath, enum_type, QueryError
 from .releaserc import ReleaseRC
+
 
 @enum_type
 class CiProvider(Enum):
@@ -31,12 +31,13 @@ class CiProvider(Enum):
     GITHUB = "github"
 
 SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release:latest"
-VERSION_OUTPUT_FILE = "version.txt"
+NEXT_VERSION_FILE = "next-version.txt"
+CURRENT_VERSION_FILE = "current-version.txt"
 
 @object_type
 class SemanticRelease:
     releaserc = ReleaseRC()
-    version = "0.0.0"
+
     @function
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
@@ -72,10 +73,20 @@ class SemanticRelease:
             return None
         
         #Getting the version from the output file
-        version = await container.with_exec(["cat", VERSION_OUTPUT_FILE]).stdout()
+        # next_version = await container.with_exec(["cat", NEXT_VERSION_FILE]).stdout()
+        output_directory = container.directory("/usr/share/nginx/html")
+        next_version_file = output_directory.file(NEXT_VERSION_FILE)
+        try:
+            return (await next_version_file.contents()).strip()
+        except QueryError:  # Catch the error if the file doesn't exist
+            try:
+                # If the NEXT_VERSION file doesn't exist, try to get CURRENT_VERSION_FILE
+                current_version_file = output_directory.file(CURRENT_VERSION_FILE)
+                return (await current_version_file.contents()).strip()
+            except Exception:
+                # If no version file is found, return a default version
+                return "0.0.0"
 
-        print(f"Version: {version}")
-        return version
 
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
@@ -85,7 +96,7 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {VERSION_OUTPUT_FILE}"
+                "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {NEXT_VERSION_FILE} && echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}",
             }
         ]
         
