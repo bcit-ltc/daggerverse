@@ -77,20 +77,27 @@ class SemanticRelease:
         #Getting the version from the output file
         # next_version = await container.with_exec(["cat", NEXT_VERSION_FILE]).stdout()
         output_directory = container.directory(APP_DIR)
-        next_version_file = output_directory.file(NEXT_VERSION_FILE)
+        # next_version_file = output_directory.file(NEXT_VERSION_FILE)
+        current_version_file = output_directory.file(CURRENT_VERSION_FILE)
         try:
-            nextstring = (await next_version_file.contents()).strip()
-            currentstring = (await output_directory.file(CURRENT_VERSION_FILE).contents()).strip()
-            laststring = (await output_directory.file(LAST_RELEASE_FILE).contents()).strip()
-            return f"Next version: {nextstring}, Current version: {currentstring}, Last release: {laststring}"
+            # If the NEXT_VERSION file doesn't exist, try to get CURRENT_VERSION_FILE
+            currentstring = (await current_version_file.contents()).strip()
+            return currentstring
         except QueryError:  # Catch the error if the file doesn't exist
-            try:
-                # If the NEXT_VERSION file doesn't exist, try to get CURRENT_VERSION_FILE
-                current_version_file = output_directory.file(CURRENT_VERSION_FILE)
-                return (await current_version_file.contents()).strip()
-            except Exception:
-                # If no version file is found, return a default version
-                return "0.0.0"
+            return "0.0.0"
+        # try:
+        #     nextstring = (await next_version_file.contents()).strip()
+        #     currentstring = (await output_directory.file(CURRENT_VERSION_FILE).contents()).strip()
+        #     laststring = (await output_directory.file(LAST_RELEASE_FILE).contents()).strip()
+        #     return f"Next version: {nextstring}, Current version: {currentstring}, Last release: {laststring}"
+        # except QueryError:  # Catch the error if the file doesn't exist
+        #     try:
+        #         # If the NEXT_VERSION file doesn't exist, try to get CURRENT_VERSION_FILE
+        #         current_version_file = output_directory.file(CURRENT_VERSION_FILE)
+        #         return (await current_version_file.contents()).strip()
+        #     except Exception:
+        #         # If no version file is found, return a default version
+        #         return "0.0.0"
 
 
     def _configure_release_params(self):
@@ -101,7 +108,7 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "verifyReleaseCmd": f"echo ${{version}} > {NEXT_VERSION_FILE}"
+                "verifyReleaseCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}"
             }
         ]
         self.releaserc.add_plugin(exec_plugin)
