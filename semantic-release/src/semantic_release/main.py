@@ -33,6 +33,7 @@ class CiProvider(Enum):
 SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release:latest"
 NEXT_VERSION_FILE = "next-version.txt"
 CURRENT_VERSION_FILE = "current-version.txt"
+LAST_RELEASE_FILE = "last-release.txt"
 APP_DIR = "/app"
 
 @object_type
@@ -97,7 +98,9 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "verifyReleaseCmd": f"sh -c 'echo ${{nextRelease.version}} > {NEXT_VERSION_FILE} && echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}'",
+                "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {NEXT_VERSION_FILE}",
+                "prepareCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}",
+                "successCmd": f"echo ${{lastRelease}} > {LAST_RELEASE_FILE}",
             }
         ]
         
