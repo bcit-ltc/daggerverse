@@ -102,7 +102,7 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "verifyReleaseCmd": f"echo ${{lastRelease}} > {LAST_RELEASE_FILE}",
+                "verifyReleaseCmd": f"echo ${{lastRelease.version}} > {LAST_RELEASE_FILE}",
                 # "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {NEXT_VERSION_FILE}",
                 # "prepareCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}",
                 # "successCmd": f"echo ${{lastRelease}} > {LAST_RELEASE_FILE}",
