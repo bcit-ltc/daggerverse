@@ -33,6 +33,7 @@ class CiProvider(Enum):
 SEMANTIC_RELEASE_IMAGE = f"ghcr.io/bcit-ltc/semantic-release:latest"
 NEXT_VERSION_FILE = "next-version.txt"
 CURRENT_VERSION_FILE = "current-version.txt"
+APP_DIR = "/app"
 
 @object_type
 class SemanticRelease:
@@ -74,7 +75,7 @@ class SemanticRelease:
         
         #Getting the version from the output file
         # next_version = await container.with_exec(["cat", NEXT_VERSION_FILE]).stdout()
-        output_directory = container.directory("/usr/share/nginx/html")
+        output_directory = container.directory(APP_DIR)
         next_version_file = output_directory.file(NEXT_VERSION_FILE)
         try:
             return (await next_version_file.contents()).strip()
@@ -129,8 +130,8 @@ class SemanticRelease:
         This functions specifies the container image and the working directory and
         copies the source directory to the container"""
         return await dag.container().from_(SEMANTIC_RELEASE_IMAGE).with_directory(
-            "/app", source
-        ).with_workdir("/app")
+            APP_DIR, source
+        ).with_workdir(APP_DIR)
 
 
     async def _github_actions_runner(self, container: Container) -> Container:
