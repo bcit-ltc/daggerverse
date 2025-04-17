@@ -79,7 +79,10 @@ class SemanticRelease:
         output_directory = container.directory(APP_DIR)
         next_version_file = output_directory.file(NEXT_VERSION_FILE)
         try:
-            return (await next_version_file.contents()).strip()
+            nextstring = (await next_version_file.contents()).strip()
+            currentstring = (await output_directory.file(CURRENT_VERSION_FILE).contents()).strip()
+            laststring = (await output_directory.file(LAST_RELEASE_FILE).contents()).strip()
+            return f"Next version: {nextstring}, Current version: {currentstring}, Last release: {laststring}"
         except QueryError:  # Catch the error if the file doesn't exist
             try:
                 # If the NEXT_VERSION file doesn't exist, try to get CURRENT_VERSION_FILE
@@ -98,13 +101,11 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "analyzeCommitsCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}"
+                "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {NEXT_VERSION_FILE}",
+                "prepareCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}",
+                "successCmd": f"echo ${{lastRelease.version}} > {LAST_RELEASE_FILE}",
             }
         ]
-                # "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {NEXT_VERSION_FILE}",
-                # "prepareCmd": f"echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}",
-                # "successCmd": f"echo ${{lastRelease}} > {LAST_RELEASE_FILE}",
-        
         self.releaserc.add_plugin(exec_plugin)
 
         """Configure release parameters based on the CI provider."""
