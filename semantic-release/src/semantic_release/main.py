@@ -97,7 +97,7 @@ class SemanticRelease:
         exec_plugin = [
             "@semantic-release/exec",
             {
-                "verifyReleaseCmd": f"echo ${{nextRelease.version}} > {NEXT_VERSION_FILE}",
+                "verifyReleaseCmd": f"sh -c 'echo ${{nextRelease.version}} > {NEXT_VERSION_FILE} && echo ${{currentRelease.version}} > {CURRENT_VERSION_FILE}'",
             }
         ]
         
