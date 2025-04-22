@@ -74,18 +74,23 @@ class SemanticRelease:
             return None
         
         #Getting the version from the output file
-        output_directory = container.directory(APP_DIR)
-        last_release_file = output_directory.file(LAST_RELEASE_FILE)
-        last_version = (await last_release_file.contents()).strip()
+        try:
+            output_directory = container.directory(APP_DIR)
+            last_release_file = output_directory.file(LAST_RELEASE_FILE)
+            last_version = (await last_release_file.contents()).strip()
+            print(f"Last release version: {last_version}")
+        except QueryError as e:
+            print(f"Last Release Error: {e}")
         
         try:
             next_release_file = output_directory.file(NEXT_RELEASE_FILE)
             next_version = (await next_release_file.contents()).strip()
             return next_version
-        except QueryError:
-            print("No next release version found")
-        finally:
-            return last_version
+        except QueryError as e:
+            print("Next Release Error: ", e)
+        
+        return next_version or last_version
+        
 
 
     def _configure_release_params(self):
