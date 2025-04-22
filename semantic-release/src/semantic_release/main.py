@@ -85,7 +85,7 @@ class SemanticRelease:
         try:
             next_release_file = output_directory.file(NEXT_RELEASE_FILE)
             next_version = (await next_release_file.contents()).strip()
-            return next_version
+            print(f"Next release version: {next_version}")
         except QueryError as e:
             print("Next Release Error: ", e)
         
