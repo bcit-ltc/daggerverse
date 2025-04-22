@@ -81,6 +81,7 @@ class SemanticRelease:
             print(f"Last release version: {last_version}")
         except QueryError as e:
             print(f"Last Release Error: {e}")
+            last_version = None
         
         try:
             next_release_file = output_directory.file(NEXT_RELEASE_FILE)
@@ -88,6 +89,7 @@ class SemanticRelease:
             print(f"Next release version: {next_version}")
         except QueryError as e:
             print("Next Release Error: ", e)
+            next_version = None
         
         return next_version or last_version
         
