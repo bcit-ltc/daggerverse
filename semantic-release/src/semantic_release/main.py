@@ -18,6 +18,7 @@ project, maintained by its contributors. All semantic-release core functionaliti
 [license and guidelines](https://github.com/semantic-release/semantic-release/blob/master/LICENSE).
 """
 
+import json
 from typing import Annotated
 from enum import Enum
 from dagger import Container, dag, Directory, Doc, function, object_type, Secret, DefaultPath, enum_type, QueryError
@@ -40,7 +41,7 @@ class SemanticRelease:
     releaserc = ReleaseRC()
 
     @function
-    async def run(self,
+    async def semanticrelease(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")],  # GitHub username
@@ -91,7 +92,9 @@ class SemanticRelease:
             print("Next Release Error: ", e)
             next_version = None
         
-        return next_version or last_version
+        result_json = { "last_release": last_version, "next_release": next_version }
+
+        return json.dumps(result_json)
         
 
 
