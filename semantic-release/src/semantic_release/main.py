@@ -50,16 +50,17 @@ class SemanticRelease:
             debug: Annotated[bool, Doc("Debug mode")] = False, # debug mode, ignored in local mode(defaults True)
             ci: Annotated[bool, Doc("CI mode")] = True, # CI mode defaults to true, ignored in local mode(defaults False)
             ) -> str:
+        
+        self.github_token = github_token
+        self.username = username
+        self.dry_run = dry_run
+        self.debug = debug
+        self.ci = ci
 
         if github_token is not None:
             print("GITHUB_TOKEN detected")
             print("Running in GitHub Actions")
             self.ci_provider = CiProvider.GITHUB
-            self.github_token = github_token
-            self.username = username
-            self.dry_run = dry_run
-            self.debug = debug
-            self.ci = ci
         else:
             print("Running locally, Semantic Release dry run mode with commit analyzer")
             self.ci_provider = CiProvider.NONE
