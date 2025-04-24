@@ -106,7 +106,6 @@ class SemanticRelease:
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
-        self.releaserc.add_plugin("@semantic-release/release-notes-generator")
 
         exec_plugin = [
             "@semantic-release/exec",
@@ -129,6 +128,8 @@ class SemanticRelease:
             ]
 
             self.releaserc.add_plugin(github_plugin)
+
+            self.releaserc.add_plugin("@semantic-release/release-notes-generator")
             self.releaserc.set_dry_run(self.dry_run)
             self.releaserc.set_debug(self.debug)
             self.releaserc.set_ci(self.ci)
