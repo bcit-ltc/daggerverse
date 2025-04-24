@@ -53,7 +53,7 @@ class PipelineManager:
         else:
             if self.branch == MAIN_BRANCH:
                 # semantic_release = await self.semantic_release()
-                # semantic_release_result = '{ "next_release": null, "last_release": "1.0.1"}'
+                semantic_release_result = '{ "next_release": null, "last_release": "1.0.1"}'
 
                 # Convert JSON String to Python
                 semantic_release_result = json.loads(semantic_release_result)
