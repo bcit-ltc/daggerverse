@@ -44,7 +44,7 @@ class SemanticRelease:
     async def semanticrelease(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
-            username: Annotated[str, Doc("Github Username")],  # GitHub username
+            username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             dry_run: Annotated[bool, Doc("Dry run mode")] = False, # dry run mode, ignored in local mode(defaults True)
             debug: Annotated[bool, Doc("Debug mode")] = False, # debug mode, ignored in local mode(defaults True)
             ci: Annotated[bool, Doc("CI mode")] = True, # CI mode defaults to true, ignored in local mode(defaults False)
