@@ -45,6 +45,9 @@ class SemanticRelease:
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")],  # GitHub username
+            dry_run: Annotated[bool, Doc("Dry run mode")] = False, # dry run mode, ignored in local mode(defaults True)
+            debug: Annotated[bool, Doc("Debug mode")] = False, # debug mode, ignored in local mode(defaults True)
+            ci: Annotated[bool, Doc("CI mode")] = True, # CI mode defaults to true, ignored in local mode(defaults False)
             ) -> str:
 
         if github_token is not None:
@@ -54,6 +57,9 @@ class SemanticRelease:
             self.github_token = github_token
             self.branch = "main"
             self.username = username
+            self.dry_run = dry_run
+            self.debug = debug
+            self.ci = ci
         else:
             print("Running locally, Semantic Release skipped")
             self.ci_provider = CiProvider.NONE
@@ -124,9 +130,9 @@ class SemanticRelease:
             ]
 
             self.releaserc.add_plugin(github_plugin)
-            self.releaserc.set_dry_run(True)
-            self.releaserc.set_debug(False)
-            self.releaserc.set_ci(True)
+            self.releaserc.set_dry_run(self.dry_run)
+            self.releaserc.set_debug(self.debug)
+            self.releaserc.set_ci(self.ci)
         else:
             print("No CI provider detected, running in local mode")
             self.releaserc.set_dry_run(True)
