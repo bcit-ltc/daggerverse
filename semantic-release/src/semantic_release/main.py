@@ -124,7 +124,7 @@ class SemanticRelease:
             ]
 
             self.releaserc.add_plugin(github_plugin)
-            self.releaserc.set_dry_run(False)
+            self.releaserc.set_dry_run(True)
             self.releaserc.set_debug(False)
             self.releaserc.set_ci(True)
         else:
