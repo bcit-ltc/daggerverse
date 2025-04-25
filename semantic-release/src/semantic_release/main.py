@@ -39,31 +39,31 @@ APP_DIR = "/app"
 @object_type
 class SemanticRelease:
     releaserc = ReleaseRC()
+    branch = "main"
 
     @function
     async def semanticrelease(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
-            username: Annotated[str, Doc("Github Username")],  # GitHub username
+            username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             dry_run: Annotated[bool, Doc("Dry run mode")] = False, # dry run mode, ignored in local mode(defaults True)
             debug: Annotated[bool, Doc("Debug mode")] = False, # debug mode, ignored in local mode(defaults True)
             ci: Annotated[bool, Doc("CI mode")] = True, # CI mode defaults to true, ignored in local mode(defaults False)
             ) -> str:
+        
+        self.github_token = github_token
+        self.username = username
+        self.dry_run = dry_run
+        self.debug = debug
+        self.ci = ci
 
         if github_token is not None:
             print("GITHUB_TOKEN detected")
             print("Running in GitHub Actions")
             self.ci_provider = CiProvider.GITHUB
-            self.github_token = github_token
-            self.branch = "main"
-            self.username = username
-            self.dry_run = dry_run
-            self.debug = debug
-            self.ci = ci
         else:
-            print("Running locally, Semantic Release skipped")
+            print("Running locally, Semantic Release dry run mode with commit analyzer")
             self.ci_provider = CiProvider.NONE
-            return None
 
         # Configure release parameters based on the CI provider
         self._configure_release_params()
@@ -77,8 +77,8 @@ class SemanticRelease:
             print("Running in GitHub Actions")
             container = await self._github_actions_runner(container)
         else:
-            print("Running locally, Semantic Release skipped")
-            return None
+            print("Running locally")
+            container = await self._local_runner(container)
         
         #Getting the version from the output file
         try:
@@ -107,7 +107,6 @@ class SemanticRelease:
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
-        self.releaserc.add_plugin("@semantic-release/release-notes-generator")
 
         exec_plugin = [
             "@semantic-release/exec",
@@ -130,6 +129,8 @@ class SemanticRelease:
             ]
 
             self.releaserc.add_plugin(github_plugin)
+
+            self.releaserc.add_plugin("@semantic-release/release-notes-generator")
             self.releaserc.set_dry_run(self.dry_run)
             self.releaserc.set_debug(self.debug)
             self.releaserc.set_ci(self.ci)
@@ -165,4 +166,14 @@ class SemanticRelease:
         ).with_env_variable("GITHUB_ACTOR", self.username
         ).with_env_variable("GITHUB_REF", f"refs/heads/{self.branch}"
         ).with_env_variable("GITHUB_ACTIONS", "true"
+        ).with_exec(["npx", "semantic-release"])
+
+    async def _local_runner(self, container: Container) -> Container:
+        """Run semantic release locally. minimal plugins enabled"""
+        return await container.with_new_file(
+            ".releaserc", contents=self.releaserc.to_string()
+        ).with_exec(
+            ["ls", "-la"]
+        ).with_exec(
+            ["cat", ".releaserc"]
         ).with_exec(["npx", "semantic-release"])
