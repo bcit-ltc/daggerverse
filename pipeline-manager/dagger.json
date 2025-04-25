@@ -1,0 +1,14 @@
+{
+  "name": "pipeline-manager",
+  "engineVersion": "v0.18.4",
+  "sdk": {
+    "source": "python"
+  },
+  "dependencies": [
+    {
+      "name": "semantic-release",
+      "source": "github.com/BCIT-LTC/daggerverse/semantic-release",
+      "pin": "b4200daf22e746bbb6ace65bed4f3768c8d3ce67"
+    }
+  ]
+}
