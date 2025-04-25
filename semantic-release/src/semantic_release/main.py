@@ -149,7 +149,6 @@ class SemanticRelease:
             APP_DIR, source
         ).with_workdir(APP_DIR)
 
-
     async def _github_actions_runner(self, container: Container) -> Container:
         """Run semantic release in GitHub Actions. This mimics the GitHub Actions environment
         by setting the GITHUB_REF and GITHUB_ACTIONS environment variables.
@@ -161,6 +160,7 @@ class SemanticRelease:
             ["ls", "-la"]
         ).with_exec(
             ["cat", ".releaserc"]
+        # Required for Semantic Release
         ).with_secret_variable("GITHUB_TOKEN", self.github_token
         ).with_env_variable("GITHUB_USERNAME", self.username
         ).with_env_variable("GITHUB_ACTOR", self.username
@@ -168,6 +168,7 @@ class SemanticRelease:
         ).with_env_variable("GITHUB_ACTIONS", "true"
         ).with_exec(["npx", "semantic-release"])
 
+    # Run local (Requires GITHUB_TOKEN environment variable)
     async def _local_runner(self, container: Container) -> Container:
         """Run semantic release locally. minimal plugins enabled"""
         return await container.with_new_file(
