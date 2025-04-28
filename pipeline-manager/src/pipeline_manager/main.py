@@ -9,7 +9,7 @@ class Environment(Enum):
     STABLE = "stable"   # latest version ( main branch commit includes semver format)
     LATEST = "latest"   # latest version ( main branch commit without semver format)
     REVIEW = "review"   # review version ( not on main branch )
-    LATEST_STABLE = "latest-stable" # could be either latest or stable (transition state)
+    LATEST_STABLE = "latest_stable" # could be either latest or stable (transition state)
     LOCAL = "local"     # local environment
     CI = "ci"           # token found
     NONE = "none"       # undefined
@@ -84,7 +84,11 @@ class PipelineManager:
         """
         if self.environment == Environment.LATEST_STABLE:
             # Run semantic release logic
-            self.semantic_release_result = await self._semantic_release()
+            self.semantic_release_result = await dag.semantic_release(
+                source=self.source,
+                github_token=self.github_token,
+                username=self.username
+            )
             print("Semantic Release Result: ", self.semantic_release_result)
         else:
             print("Not running semantic release for this environment")
