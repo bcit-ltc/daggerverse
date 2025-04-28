@@ -6,13 +6,13 @@ import json
 
 @enum_type
 class Environment(Enum):
-    STABLE = "stable"   # latest version ( main branch commit includes semver format)
-    LATEST = "latest"   # latest version ( main branch commit without semver format)
-    REVIEW = "review"   # review version ( not on main branch )
+    STABLE = "stable"               # latest version ( main branch commit includes semver format)
+    LATEST = "latest"               # latest version ( main branch commit without semver format)
+    REVIEW = "review"               # review version ( not on main branch )
     LATEST_STABLE = "latest_stable" # could be either latest or stable (transition state)
-    LOCAL = "local"     # local environment
-    CI = "ci"           # token found
-    NONE = "none"       # undefined
+    LOCAL = "local"                 # local environment
+    CI = "ci"                       # token found
+    NONE = "none"                   # undefined
     
 MAIN_BRANCH = "main"
 
