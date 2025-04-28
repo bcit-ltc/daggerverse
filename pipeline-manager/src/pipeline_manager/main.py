@@ -4,17 +4,19 @@ from typing import Annotated
 # import asyncio
 import json
 
+# Constants
+MAIN_BRANCH = "main"
+
 @enum_type
 class Environment(Enum):
     STABLE          = "stable"        # latest version ( main branch commit includes semver format)
     LATEST          = "latest"        # latest version ( main branch commit without semver format)
     REVIEW          = "review"        # review version ( not on main branch )
-    LATEST_STABLE   = "latest_stable" # could be either latest or stable (transition state)
     LOCAL           = "local"         # local environment
-    CI              = "ci"            # token found
-    NONE            = "none"          # undefined
-    
-MAIN_BRANCH = "main"
+    LATEST_STABLE   = "latest_stable" # could be either latest or stable (transition state)
+    CI              = "ci"            # token found    (transition state)
+    NONE            = "none"          # undefined      (transition state)
+
 
 @object_type
 class PipelineManager:
