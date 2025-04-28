@@ -90,6 +90,12 @@ class PipelineManager:
                 username=self.username
             )
             print("Semantic Release Result: ", self.semantic_release_result)
+            self.semantic_release_result = json.loads(self.semantic_release_result)
+            print("Next Release: ", self.semantic_release_result['next_release'])
+            if self.semantic_release_result['next_release']:
+                self.environment = Environment.STABLE
+            else:
+                self.environment = Environment.LATEST
         else:
             print("Not running semantic release for this environment")
             self.semantic_release_result = None
