@@ -24,7 +24,7 @@ class PipelineManager:
     environment = Environment.NONE
     semantic_release_result = None
     version = None
-    tag = None
+    tags = None
 
     @function
     async def run(self,
@@ -125,14 +125,14 @@ class PipelineManager:
         current_timestamp = now.strftime(current_date + "%s")
 
         if self.environment == Environment.STABLE:
-            self.tag = f"{self.version}"
-            print("Tag created for STABLE: ", self.tag)
+            self.tags = f"{self.version},{Environment.STABLE},{Environment.LATEST}"
+            print("Tags created for STABLE: ", self.tags)
         elif self.environment == Environment.LATEST:
-            self.tag = f"{self.version}-{self.commit_hash}.{current_timestamp}"
-            print("Tag created for LATEST: ", self.tag)
+            self.tags = f"{self.version}-{self.commit_hash}.{current_timestamp},{Environment.LATEST}"
+            print("Tags created for LATEST: ", self.tags)
         elif self.environment == Environment.REVIEW:
-            self.tag = f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"
-            print("Tag created for REVIEW: ", self.tag)
+            self.tags = f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"
+            print("Tag created for REVIEW: ", self.tags)
         else:
             print("No tag created for this environment")
             
