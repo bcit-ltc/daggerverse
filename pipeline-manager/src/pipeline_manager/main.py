@@ -75,8 +75,10 @@ class PipelineManager:
         Determine if running on a review branch or main branch
         """
         if self.branch == MAIN_BRANCH:
+            print("Running on Main branch")
             self.environment = Environment.LATEST_STABLE
         else:
+            print("Running on Review branch")
             self.environment = Environment.REVIEW
     
     @function
@@ -85,7 +87,7 @@ class PipelineManager:
         Run semantic release if the environment is either latest or stable
         """
         if self.environment == Environment.LATEST_STABLE:
-            # Run semantic release logic
+            print("Running semantic release...")
             self.semantic_release_result = await dag.semantic_release(
                 source=self.source,
                 github_token=self.github_token,
