@@ -88,7 +88,8 @@ class PipelineManager:
         """
         if self.environment == Environment.LATEST_STABLE:
             print("Running semantic release...")
-            self.semantic_release_result = await dag.semantic_release.semanticrelease(
+            print(dag.semantic_release())
+            self.semantic_release_result = await dag.semantic_release().semanticrelease(
                 source=self.source,
                 github_token=self.github_token,
                 username=self.username
