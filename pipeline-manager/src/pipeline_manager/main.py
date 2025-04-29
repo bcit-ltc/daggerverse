@@ -3,6 +3,7 @@ from dagger import dag, function, object_type, Container, DefaultPath, Directory
 from typing import Annotated
 # import asyncio
 import json
+from datetime import datetime
 
 # Constants
 MAIN_BRANCH = "main"
@@ -22,6 +23,8 @@ class Environment(Enum):
 class PipelineManager:
     environment = Environment.NONE
     semantic_release_result = None
+    version = None
+    tag = None
 
     @function
     async def run(self,
@@ -42,8 +45,8 @@ class PipelineManager:
         # Run unit tests
         await self.unit_tests()
 
-        # Determine if ci environment
-        await self._check_ci()
+        # Determine if ci environment by checking for GitHub token
+        await self._check_if_ci()
 
         # Build the Docker image
         await self.build_docker_image()
@@ -54,10 +57,14 @@ class PipelineManager:
         # Run semantic release
         await self.run_semantic_release()
     
+        # Create tag
+        await self._create_tag()
+
+
         return self.environment
 
     @function
-    async def _check_ci(self) -> None:
+    async def _check_if_ci(self) -> None:
         """
         Check if the environment is CI or local
         """
@@ -99,11 +106,36 @@ class PipelineManager:
             print("Next Release: ", self.semantic_release_result['next_release'])
             if self.semantic_release_result['next_release']:
                 self.environment = Environment.STABLE
+                self.version = self.semantic_release_result['next_release']
             else:
                 self.environment = Environment.LATEST
+                self.version = self.semantic_release_result['last_release']
         else:
             print("Not running semantic release for this environment")
             self.semantic_release_result = None
+
+    @function
+    async def _create_tag(self) -> None:
+        """
+        Create a tag for the release
+        """
+        # Get the current date and time
+        now = datetime.now()
+        current_date = now.strftime("%Y-%m-%d")
+        current_timestamp = now.strftime(current_date + "%s")
+
+        if self.environment == Environment.STABLE:
+            self.tag = f"{self.version}"
+            print("Tag created for STABLE: ", self.tag)
+        elif self.environment == Environment.LATEST:
+            self.tag = f"{self.version}-{self.commit_hash}.{current_timestamp}"
+            print("Tag created for LATEST: ", self.tag)
+        elif self.environment == Environment.REVIEW:
+            self.tag = f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"
+            print("Tag created for REVIEW: ", self.tag)
+        else:
+            print("No tag created for this environment")
+            
 
     @function
     async def unit_tests(self) -> None:
