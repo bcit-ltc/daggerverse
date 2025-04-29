@@ -61,7 +61,7 @@ class PipelineManager:
         await self._create_tag()
 
 
-        return self.environment
+        return f"Tags: {self.tags}, Environment: {self.environment}"
 
     @function
     async def _check_if_ci(self) -> None:
