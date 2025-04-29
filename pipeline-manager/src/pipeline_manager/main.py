@@ -1,7 +1,5 @@
-import dagger
-from dagger import dag, function, object_type, Container, DefaultPath, Directory, Secret, Doc, Enum, EnvVariable, enum_type
+from dagger import dag, function, object_type, DefaultPath, Directory, Secret, Doc, Enum, enum_type
 from typing import Annotated
-# import asyncio
 import json
 from datetime import datetime
 
@@ -25,45 +23,8 @@ class PipelineManager:
     semantic_release_result = None
     version = None
     tags = None
+    docker_container = None
 
-    @function
-    async def run(self,
-                source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
-                github_token: Annotated[Secret, Doc("Github Token")] | None,
-                username: Annotated[str, Doc("Github Username")] | None,  # GitHub username
-                branch: Annotated[str, Doc("Current Branch")] | None,  # Current branch
-                commit_hash: Annotated[str, Doc("Current Commit Hash")] | None,  # Current commit hash
-                  ) -> str:
-        print(dir(dag))
-        # Set function arguments as class variables
-        self.source = source
-        self.github_token = github_token
-        self.username = username
-        self.branch = branch
-        self.commit_hash = commit_hash
-        
-        # Run unit tests
-        await self.unit_tests()
-
-        # Determine if ci environment by checking for GitHub token
-        await self._check_if_ci()
-
-        # Build the Docker image
-        await self.build_docker_image()
-        
-        # Determine the environment
-        await self._check_if_review()
-
-        # Run semantic release
-        await self.run_semantic_release()
-    
-        # Create tag
-        await self._create_tag()
-
-
-        return f"Tags: {self.tags}, Environment: {self.environment}"
-
-    @function
     async def _check_if_ci(self) -> None:
         """
         Check if the environment is CI or local
@@ -76,7 +37,7 @@ class PipelineManager:
             print("Running locally")
             self.environment = Environment.LOCAL
 
-    @function
+
     async def _check_if_review(self) -> str:
         """
         Determine if running on a review branch or main branch
@@ -87,7 +48,74 @@ class PipelineManager:
         else:
             print("Running on Review branch")
             self.environment = Environment.REVIEW
+
+
+    async def _create_tag(self) -> None:
+        """
+        Create a tag for the release
+        """
+        # Get the current date and time
+        now = datetime.now()
+        current_date = now.strftime("%Y-%m-%d")
+        current_timestamp = now.strftime(current_date + "%s")
+
+        if self.environment == Environment.STABLE:
+            self.tags = f"{self.version},{Environment.STABLE},{Environment.LATEST}"
+            print("Tags created for STABLE: ", self.tags)
+        elif self.environment == Environment.LATEST:
+            self.tags = f"{self.version}-{self.commit_hash}.{current_timestamp},{Environment.LATEST}"
+            print("Tags created for LATEST: ", self.tags)
+        elif self.environment == Environment.REVIEW:
+            self.tags = f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"
+            print("Tag created for REVIEW: ", self.tags)
+        else:
+            print("No tag created for this environment")
+            
     
+    async def _build_docker_image(self) -> None:
+        """
+        Build the Docker image using the source directory.
+        """
+        print("Building Docker image...")
+        try:
+            self.docker_container = await self.source.docker_build()
+        except Exception as e:
+            print(f"Error building Docker image: {e}")
+            raise
+        print("Docker image built successfully")
+
+
+    async def _publish_docker_image(self) -> None:
+        """
+        Publish the Docker image to a registry.
+        """
+        print("Publishing Docker image...")
+        # parse self.tags that is comma separated
+        tags = self.tags.split(",")
+        final_container = await (
+                self.docker_container
+                .with_registry_auth(self.registry_path, self.username, self.github_token)
+            )
+  
+        # Publish the image for each tag
+        for tag in tags:
+            await final_container.publish(f"{self.registry_path}:{tag}")
+    
+        print(f"Published with tags: {', '.join(tags)}")
+
+
+    @function
+    async def unit_tests(self) -> None:
+        """
+        Run unit tests by calling the test function in the source directory.
+        This function is a placeholder and should be replaced with actual test logic.
+        """
+        print("Running unit tests...")
+        # Add your unit test logic here
+        # For example, you can use pytest to run tests in the source directory
+        # await self.source.run("pytest", args=["-v", "--tb=short"])
+        
+
     @function
     async def run_semantic_release(self) -> str:
         """
@@ -137,15 +165,41 @@ class PipelineManager:
             print("No tag created for this environment")
             
     @function
-    async def unit_tests(self) -> None:
+    async def run(self,
+                source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
+                github_token: Annotated[Secret, Doc("Github Token")] | None,
+                username: Annotated[str, Doc("Github Username")] | None,  # GitHub username
+                branch: Annotated[str, Doc("Current Branch")] | None,  # Current branch
+                commit_hash: Annotated[str, Doc("Current Commit Hash")] | None,  # Current commit hash
+                registry_path: Annotated[str, Doc("Docker Registry Path")] | None,  # Docker registry path
+                  ) -> None:
         """
-        Run unit tests by calling the test function in the source directory.
-        This function is a placeholder and should be replaced with actual test logic.
+        Run the pipeline manager to build and publish a Docker image.
         """
-        print("Running unit tests...")
-        # Add your unit test logic here
-        # For example, you can use pytest to run tests in the source directory
-        # await self.source.run("pytest", args=["-v", "--tb=short"])
+
+        print(dir(dag))
+        # Set function arguments as class variables
+        self.source = source
+        self.github_token = github_token
+        self.username = username
+        self.branch = branch
+        self.commit_hash = commit_hash
+        self.registry_path = registry_path
+
+        # Run unit tests
+        await self.unit_tests()
+
+        # Determine if ci environment by checking for GitHub token
+        await self._check_if_ci()
+
+        # Build the Docker image
+        await self._build_docker_image()
+        
+        # Determine the environment
+        await self._check_if_review()
+
+        # Run semantic release
+        await self.run_semantic_release()
     
     async def build_docker_image(self) -> None:
         """
