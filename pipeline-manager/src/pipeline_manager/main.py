@@ -31,7 +31,7 @@ class PipelineManager:
                 branch: Annotated[str, Doc("Current Branch")] | None,  # Current branch
                 commit_hash: Annotated[str, Doc("Current Commit Hash")] | None,  # Current commit hash
                   ) -> str:
-        
+        print(dir(dag))
         # Set function arguments as class variables
         self.source = source
         self.github_token = github_token
@@ -88,7 +88,7 @@ class PipelineManager:
         """
         if self.environment == Environment.LATEST_STABLE:
             print("Running semantic release...")
-            self.semantic_release_result = await dag.semantic_release(
+            self.semantic_release_result = await dag.semantic_release.semanticrelease(
                 source=self.source,
                 github_token=self.github_token,
                 username=self.username
