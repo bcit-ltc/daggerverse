@@ -60,10 +60,10 @@ class PipelineManager:
         current_timestamp = now.strftime(current_date + "%s")
 
         if self.environment == Environment.STABLE:
-            self.tags = [self.version, Environment.STABLE, Environment.LATEST]
+            self.tags = [self.version, Environment.STABLE.value, Environment.LATEST.value]
             print("Tags created for STABLE: ", self.tags)
         elif self.environment == Environment.LATEST:
-            self.tags = [f"{self.version}-{self.commit_hash}.{current_timestamp}", Environment.LATEST]
+            self.tags = [f"{self.version}-{self.commit_hash}.{current_timestamp}", Environment.LATEST.value]
             print("Tags created for LATEST: ", self.tags)
         elif self.environment == Environment.REVIEW:
             self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"]
