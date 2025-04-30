@@ -142,28 +142,7 @@ class PipelineManager:
             print("Not running semantic release for this environment")
             self.semantic_release_result = None
 
-    @function
-    async def _create_tag(self) -> None:
-        """
-        Create a tag for the release
-        """
-        # Get the current date and time
-        now = datetime.now()
-        current_date = now.strftime("%Y-%m-%d")
-        current_timestamp = now.strftime(current_date + "%s")
 
-        if self.environment == Environment.STABLE:
-            self.tags = f"{self.version},{Environment.STABLE},{Environment.LATEST}"
-            print("Tags created for STABLE: ", self.tags)
-        elif self.environment == Environment.LATEST:
-            self.tags = f"{self.version}-{self.commit_hash}.{current_timestamp},{Environment.LATEST}"
-            print("Tags created for LATEST: ", self.tags)
-        elif self.environment == Environment.REVIEW:
-            self.tags = f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"
-            print("Tag created for REVIEW: ", self.tags)
-        else:
-            print("No tag created for this environment")
-            
     @function
     async def run(self,
                 source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
@@ -201,12 +180,14 @@ class PipelineManager:
         # Run semantic release
         await self.run_semantic_release()
     
-    async def build_docker_image(self) -> None:
-        """
-        Build the Docker image using the source directory.
-        This function is a placeholder and should be replaced with actual build logic.
-        """
-        print("Building Docker image...")
-        # Add your Docker build logic here
-        # For example, you can use Docker CLI to build the image
-        # await self.source.run("docker", args=["build", "-t", "my-image", "."])
+        # Create tag
+        await self._create_tag()
+
+        print(f"Tags: {self.tags}, Environment: {self.environment}")
+
+        # Publish the Docker image
+        await self._publish_docker_image()
+        print("Pipeline completed successfully")
+    
+
+            
