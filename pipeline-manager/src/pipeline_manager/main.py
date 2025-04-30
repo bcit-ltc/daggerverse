@@ -60,15 +60,16 @@ class PipelineManager:
         current_timestamp = now.strftime(current_date + "%s")
 
         if self.environment == Environment.STABLE:
-            self.tags = f"{self.version},{Environment.STABLE},{Environment.LATEST}"
+            self.tags = [self.version, Environment.STABLE, Environment.LATEST]
             print("Tags created for STABLE: ", self.tags)
         elif self.environment == Environment.LATEST:
-            self.tags = f"{self.version}-{self.commit_hash}.{current_timestamp},{Environment.LATEST}"
+            self.tags = [f"{self.version}-{self.commit_hash}.{current_timestamp}", Environment.LATEST]
             print("Tags created for LATEST: ", self.tags)
         elif self.environment == Environment.REVIEW:
-            self.tags = f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"
+            self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"]
             print("Tag created for REVIEW: ", self.tags)
         else:
+            # self.tags = [] # for debugging purposes
             print("No tag created for this environment")
             
     
@@ -91,17 +92,16 @@ class PipelineManager:
         """
         print("Publishing Docker image...")
         # parse self.tags that is comma separated
-        tags = self.tags.split(",")
         final_container = await (
                 self.docker_container
                 .with_registry_auth(self.registry_path, self.username, self.github_token)
             )
   
         # Publish the image for each tag
-        for tag in tags:
+        for tag in self.tags:
             await final_container.publish(f"{self.registry_path}:{tag}")
     
-        print(f"Published with tags: {', '.join(tags)}")
+        print(f"Published with tags: {', '.join(self.tags)}")
 
 
     @function
