@@ -127,7 +127,8 @@ class PipelineManager:
             self.semantic_release_result = await dag.semantic_release().semanticrelease(
                 source=self.source,
                 github_token=self.github_token,
-                username=self.username
+                username=self.username,
+                repository_url=self.repository_url
             )
             print("Semantic Release Result: ", self.semantic_release_result)
             self.semantic_release_result = json.loads(self.semantic_release_result)
@@ -151,6 +152,7 @@ class PipelineManager:
                 branch: Annotated[str, Doc("Current Branch")] | None,  # Current branch
                 commit_hash: Annotated[str, Doc("Current Commit Hash")] | None,  # Current commit hash
                 registry_path: Annotated[str, Doc("Docker Registry Path")] | None,  # Docker registry path
+                repository_url: Annotated[str, Doc("Repository URL")] | None,  # Repository URL
                   ) -> None:
         """
         Run the pipeline manager to build and publish a Docker image.
@@ -164,6 +166,7 @@ class PipelineManager:
         self.branch = branch
         self.commit_hash = commit_hash
         self.registry_path = registry_path
+        self.repository_url = repository_url
 
         # Run unit tests
         await self.unit_tests()

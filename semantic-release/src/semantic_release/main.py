@@ -46,6 +46,7 @@ class SemanticRelease:
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret, Doc("Github Token")] | None,
             username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
+            repository_url: Annotated[str, Doc("Repository URL")] = "", # Repository URL
             dry_run: Annotated[bool, Doc("Dry run mode")] = False, # dry run mode, ignored in local mode(defaults True)
             debug: Annotated[bool, Doc("Debug mode")] = False, # debug mode, ignored in local mode(defaults True)
             ci: Annotated[bool, Doc("CI mode")] = True, # CI mode defaults to true, ignored in local mode(defaults False)
@@ -53,6 +54,7 @@ class SemanticRelease:
         
         self.github_token = github_token
         self.username = username
+        self.repository_url = repository_url
         self.dry_run = dry_run
         self.debug = debug
         self.ci = ci
@@ -106,6 +108,7 @@ class SemanticRelease:
 
     def _configure_release_params(self):
         self.releaserc.add_branch(self.branch)
+        self.releaserc.set_repository_url(self.repository_url)
         self.releaserc.add_plugin("@semantic-release/commit-analyzer")
 
         exec_plugin = [
