@@ -18,8 +18,7 @@ APP_DIR = "/app"
 
 @object_type
 class SemanticRelease:
-    """
-    Semantic Release Dagger Module
+    """Semantic Release Dagger Module
 
     This Dagger module extends the functionality of the [semantic-release](https://github.com/semantic-release/semantic-release) 
     project, providing a containerized and declarative pipeline for fully automated software release workflows. 
