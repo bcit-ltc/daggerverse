@@ -8,7 +8,7 @@
     {
       "name": "semantic-release",
       "source": "github.com/BCIT-LTC/daggerverse/semantic-release",
-      "pin": "608f26414ab1b9dd039571ad6d458458f2362bb1"
+      "pin": "a4ea32d11fdaac20b05c5d2140164370a00bd867"
     }
   ]
 }
