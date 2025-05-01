@@ -1,3 +1,24 @@
+
+"""
+Semantic Release Dagger Module
+
+This Dagger module extends the functionality of the [semantic-release](https://github.com/semantic-release/semantic-release) 
+project, providing a containerized and declarative pipeline for fully automated software release workflows. 
+Built with [Dagger](https://dagger.io/), this module enables advanced CI/CD customization and composability 
+while preserving the core principles of semantic versioning and automated changelog generation.
+
+Features:
+- Encapsulates semantic-release as a Dagger pipeline step
+- Supports custom plugin injection and configuration
+- Optimized for portability and reproducibility across CI environments
+- Easily integrable with larger Dagger-based CI/CD pipelines
+
+Attribution:
+This module builds on the foundation provided by the [semantic-release](https://github.com/semantic-release/semantic-release) 
+project, maintained by its contributors. All semantic-release core functionalities remain under their original 
+[license and guidelines](https://github.com/semantic-release/semantic-release/blob/master/LICENSE).
+"""
+
 import json
 from typing import Annotated
 from enum import Enum
@@ -18,24 +39,22 @@ APP_DIR = "/app"
 
 @object_type
 class SemanticRelease:
-    """Semantic Release Dagger Module
-
-    This Dagger module extends the functionality of the [semantic-release](https://github.com/semantic-release/semantic-release) 
-    project, providing a containerized and declarative pipeline for fully automated software release workflows. 
-    Built with [Dagger](https://dagger.io/), this module enables advanced CI/CD customization and composability 
-    while preserving the core principles of semantic versioning and automated changelog generation.
-
-    Features:
-    - Encapsulates semantic-release as a Dagger pipeline step
-    - Supports custom plugin injection and configuration
-    - Optimized for portability and reproducibility across CI environments
-    - Easily integrable with larger Dagger-based CI/CD pipelines
-
-    Attribution:
-    This module builds on the foundation provided by the [semantic-release](https://github.com/semantic-release/semantic-release) 
-    project, maintained by its contributors. All semantic-release core functionalities remain under their original 
-    [license and guidelines](https://github.com/semantic-release/semantic-release/blob/master/LICENSE).
     """
+    This class encapsulates the functionality of semantic-release, providing a Dagger-based interface
+    for automating software release workflows. It allows users to configure and run semantic-release
+    in various environments, including CI/CD pipelines and local development setups.
+    The class supports custom plugin injection, configuration, and environment detection, enabling
+    seamless integration with existing workflows.
+    Attributes:
+        github_token (str): GitHub token for authentication in CI/CD environments.
+        username (str): GitHub username for commit authoring.
+        repository_url (str): URL of the GitHub repository.
+        dry_run (bool): Flag to indicate if the release should be a dry run.
+        debug (bool): Flag to enable debug mode.
+        ci (bool): Flag to indicate if running in a CI environment.
+        ci_provider (CiProvider): The CI provider being used (e.g., GitHub).
+    """
+    github_token: str | None
     releaserc = ReleaseRC()
     branch = "main"
 

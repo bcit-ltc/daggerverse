@@ -147,12 +147,12 @@ class PipelineManager:
     @function
     async def run(self,
                 source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
-                github_token: Annotated[Secret, Doc("Github Token")] | None,
-                username: Annotated[str, Doc("Github Username")] | None,  # GitHub username
-                branch: Annotated[str, Doc("Current Branch")] | None,  # Current branch
-                commit_hash: Annotated[str, Doc("Current Commit Hash")] | None,  # Current commit hash
-                registry_path: Annotated[str, Doc("Docker Registry Path")] | None,  # Docker registry path
-                repository_url: Annotated[str, Doc("Repository URL")] | None,  # Repository URL
+                github_token: Annotated[Secret | None, Doc("Github Token")],
+                username: Annotated[str | None, Doc("Github Username")],  # GitHub username
+                branch: Annotated[str | None, Doc("Current Branch")],  # Current branch
+                commit_hash: Annotated[str | None, Doc("Current Commit Hash")],  # Current commit hash
+                registry_path: Annotated[str | None, Doc("Docker Registry Path")],  # Docker registry path
+                repository_url: Annotated[str | None, Doc("Repository URL")],  # Repository URL
                   ) -> None:
         """
         Run the pipeline manager to build and publish a Docker image.
