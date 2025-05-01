@@ -19,24 +19,24 @@ APP_DIR = "/app"
 @object_type
 class SemanticRelease:
     """
-Semantic Release Dagger Module
+    Semantic Release Dagger Module
 
-This Dagger module extends the functionality of the [semantic-release](https://github.com/semantic-release/semantic-release) 
-project, providing a containerized and declarative pipeline for fully automated software release workflows. 
-Built with [Dagger](https://dagger.io/), this module enables advanced CI/CD customization and composability 
-while preserving the core principles of semantic versioning and automated changelog generation.
+    This Dagger module extends the functionality of the [semantic-release](https://github.com/semantic-release/semantic-release) 
+    project, providing a containerized and declarative pipeline for fully automated software release workflows. 
+    Built with [Dagger](https://dagger.io/), this module enables advanced CI/CD customization and composability 
+    while preserving the core principles of semantic versioning and automated changelog generation.
 
-Features:
-- Encapsulates semantic-release as a Dagger pipeline step
-- Supports custom plugin injection and configuration
-- Optimized for portability and reproducibility across CI environments
-- Easily integrable with larger Dagger-based CI/CD pipelines
+    Features:
+    - Encapsulates semantic-release as a Dagger pipeline step
+    - Supports custom plugin injection and configuration
+    - Optimized for portability and reproducibility across CI environments
+    - Easily integrable with larger Dagger-based CI/CD pipelines
 
-Attribution:
-This module builds on the foundation provided by the [semantic-release](https://github.com/semantic-release/semantic-release) 
-project, maintained by its contributors. All semantic-release core functionalities remain under their original 
-[license and guidelines](https://github.com/semantic-release/semantic-release/blob/master/LICENSE).
-"""
+    Attribution:
+    This module builds on the foundation provided by the [semantic-release](https://github.com/semantic-release/semantic-release) 
+    project, maintained by its contributors. All semantic-release core functionalities remain under their original 
+    [license and guidelines](https://github.com/semantic-release/semantic-release/blob/master/LICENSE).
+    """
     releaserc = ReleaseRC()
     branch = "main"
 
