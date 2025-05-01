@@ -51,9 +51,9 @@ class ReleaseRC:
         """Set the debug field."""
         self.set("debug", value)
     
-    # def set_repository_url(self, url: str):
-    #     """Set the repositoryUrl field."""
-    #     self.set("repositoryUrl", url)
+    def set_repository_url(self, url: str):
+        """Set the repositoryUrl field."""
+        self.set("repositoryUrl", url)
 
     def __repr__(self):
         return f"<ReleaseRC keys={list(self.data.keys())}>"
