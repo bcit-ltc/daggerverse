@@ -39,7 +39,7 @@ Wraps `semantic-release` logic to determine the next build version from Git hist
 ### `chart-updater`
 
 
-### `helm-oci-chart-releaser
+### `helm-oci-chart-releaser`
 
 
 > More modules may be added in the future as our needs evolve.
