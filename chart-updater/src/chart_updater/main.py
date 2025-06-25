@@ -30,7 +30,6 @@ class ChartUpdater:
     async def _update_chart_files(
         self,
         github_token: Secret,
-        username: str,
         repository_url: str,
         branch: str,
         app_name: str,
@@ -49,10 +48,6 @@ class ChartUpdater:
             .from_("alpine:latest")
             .with_exec(["apk", "add", "--no-cache", "git", "yq"])
             .with_secret_variable("GITHUB_TOKEN", github_token)
-            .with_env_variable("GITHUB_USERNAME", username)
-            .with_env_variable("GITHUB_ACTOR", username)
-            # .with_env_variable("GITHUB_REF", f"refs/heads/{branch}")
-            .with_env_variable("GITHUB_ACTIONS", "true")
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_workdir(repo_path)
@@ -61,6 +56,10 @@ class ChartUpdater:
             .with_exec(["yq", "-i", f'.version = "{new_chart_version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.appVersion = "{new_app_version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.image.tag = "{new_app_version}"', values_file])
+            .with_exec([
+                "sh", "-c",
+                f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{repository_url.split("/")[-2]}/{repository_url.split("/")[-1]}.git"'
+            ])
             .with_exec(["git", "add", "."])
             .with_exec([
                 "git", "commit", "-m",
@@ -86,7 +85,6 @@ class ChartUpdater:
         json_string: str,
         chart_yaml_url: str,
         github_token: Annotated[Secret, Doc("Github Token")],
-        username: Annotated[str, Doc("Github Username")],
         repository_url: Annotated[str, Doc("Repository URL")],
         branch: Annotated[str, Doc("Branch Name")],
         values_file: Annotated[str, Doc("Values file path")],
@@ -106,7 +104,6 @@ class ChartUpdater:
 
         await self._update_chart_files(
             github_token=github_token,
-            username=username,
             repository_url=repository_url,
             branch=branch,
             app_name=app_name,
