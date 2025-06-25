@@ -79,7 +79,7 @@ class ChartUpdater:
         raise ValueError(f"Invalid version format: {version}")
 
     @function
-    async def update_chart(
+    async def updatechart(
         self,
         json_string: str,
         chart_yaml_url: str,
