@@ -53,6 +53,8 @@ class ChartUpdater:
             .with_env_variable("GITHUB_ACTOR", username)
             # .with_env_variable("GITHUB_REF", f"refs/heads/{branch}")
             .with_env_variable("GITHUB_ACTIONS", "true")
+            .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
+            .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_workdir(repo_path)
             .with_exec(["git", "clone", repository_url, "."])
             .with_workdir(chart_path)
