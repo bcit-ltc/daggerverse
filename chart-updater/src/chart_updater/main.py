@@ -11,7 +11,7 @@ class ChartUpdater:
         """
         container = (
             dag.container()
-            ._from_("alpine:latest")
+            .from_("alpine:latest")
             .with_exec(["apk", "add", "--no-cache", "curl", "yq"])
         )
         if github_token:
@@ -46,7 +46,7 @@ class ChartUpdater:
 
         container = (
             dag.container()
-            ._from_("alpine:latest")
+            .from_("alpine:latest")
             .with_exec(["apk", "add", "--no-cache", "git", "yq"])
             .with_secret_variable("GITHUB_TOKEN", github_token)
             .with_env_variable("GITHUB_USERNAME", username)
