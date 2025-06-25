@@ -51,7 +51,7 @@ class ChartUpdater:
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_workdir(repo_path)
-            .with_exec(["git", "clone", repository_url, "."])
+            .with_exec(["git", "clone", "--branch", branch, repository_url, "."])
             .with_workdir(chart_path)
             .with_exec(["yq", "-i", f'.version = "{new_chart_version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.appVersion = "{new_app_version}"', "Chart.yaml"])
