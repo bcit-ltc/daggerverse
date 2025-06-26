@@ -45,6 +45,7 @@ class ChartUpdater:
         github_token: Annotated[Secret, Doc("GitHub token for authentication")],
         repository_url: Annotated[str, Doc("GitHub repository URL, e.g. 'https://github.com/org/repo.git'")],
         branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
+        chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")],
         app_name: Annotated[str, Doc("Name of the Helm chart/app, e.g. 'my-app'")],
         new_app_version: Annotated[str, Doc("New application version, e.g. '1.2.3'")],
         new_chart_version: Annotated[str, Doc("New chart version, e.g. '1.2.4'")],
@@ -54,7 +55,8 @@ class ChartUpdater:
         Clone the repository, update Chart.yaml and values file with new versions, commit, and push changes.
         """
         repo_path = "/repo"
-        chart_path = f"{repo_path}/charts/{app_name}"
+        # chart_path is now provided by the user, so use it directly
+        full_chart_path = f"{repo_path}/{chart_path}"
 
         # Prepare container for git and yq operations
         container = (
@@ -66,7 +68,7 @@ class ChartUpdater:
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_workdir(repo_path)
             .with_exec(["git", "clone", "--branch", branch, repository_url, "."])
-            .with_workdir(chart_path)
+            .with_workdir(full_chart_path)
             # Update Chart.yaml and values file with new versions
             .with_exec(["yq", "-i", f'.version = "{new_chart_version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.appVersion = "{new_app_version}"', "Chart.yaml"])
@@ -105,6 +107,7 @@ class ChartUpdater:
         github_token: Annotated[Secret, Doc("GitHub token for authentication")],
         repository_url: Annotated[str, Doc("GitHub repository URL, e.g. 'https://github.com/org/repo.git'")],
         branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
+        chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")],
         values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")],
     ) -> None:
         """
@@ -128,6 +131,7 @@ class ChartUpdater:
             repository_url=repository_url,
             branch=branch,
             app_name=app_name,
+            chart_path=chart_path,
             new_app_version=app_version,
             new_chart_version=new_chart_version,
             values_file=values_file,
