@@ -29,7 +29,7 @@ class ChartUpdater:
         # Use token if provided for private repo access
         if github_token:
             container = container.with_secret_variable("GITHUB_TOKEN", github_token)
-            curl_cmd = f"curl -s -H 'Authorization: Bearer $GITHUB_TOKEN' {chart_yaml_url} | yq '.version'"
+            curl_cmd = "curl -s -H \"Authorization: Bearer $GITHUB_TOKEN\" " + chart_yaml_url + " | yq '.version'"
         else:
             curl_cmd = f"curl -s {chart_yaml_url} | yq '.version'"
         # Execute command in container and parse version
@@ -119,6 +119,7 @@ class ChartUpdater:
             current_chart_version = await self._fetch_chart_version(chart_yaml_url, github_token)
             new_chart_version = self._increment_patch_version(current_chart_version)
         except Exception as e:
+            print(f"Error fetching or incrementing chart version: {e}")
             raise QueryError(f"Failed to get or increment chart version: {e}")
         
         # Update chart files in the repository
