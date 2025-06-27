@@ -81,10 +81,11 @@ class ChartUpdater:
             .with_workdir(full_chart_path)
         )
 
-        # Fetch current chart version from local Chart.yaml in the cloned repo
+        # Fetch current chart version from Chart.yaml in the correct directory (support both root and subdir)
+        chart_yaml_path = f"{full_chart_path}/Chart.yaml" if chart_path != "." else "Chart.yaml"
         chart_version = await (
             container
-            .with_exec(["sh", "-c", "yq eval '.version' Chart.yaml"])
+            .with_exec(["sh", "-c", f"yq eval '.version' '{chart_yaml_path}'"])
             .stdout()
         )
         chart_version = chart_version.strip()
