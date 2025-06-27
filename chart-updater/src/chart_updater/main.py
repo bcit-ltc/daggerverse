@@ -71,7 +71,7 @@ class ChartUpdater:
         # Prepare container for git, yq, and helm operations
         container = (
             dag.container()
-            .from_("alpine/helm:3.14.4")
+            .from_("alpine/helm:3.18.3")
             .with_exec(["apk", "add", "--no-cache", "git", "yq", "curl"])
             .with_secret_variable("GITHUB_TOKEN", github_token)
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
@@ -84,7 +84,7 @@ class ChartUpdater:
         # Fetch current chart version from local Chart.yaml in the cloned repo
         chart_version = await (
             container
-            .with_exec(["yq", ".version", "Chart.yaml"])
+            .with_exec(["yq", "eval", ".version", "Chart.yaml"])
             .stdout()
         )
         chart_version = chart_version.strip()
