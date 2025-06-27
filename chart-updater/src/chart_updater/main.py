@@ -10,45 +10,44 @@ import json
 
 @object_type
 class ChartUpdater:
-    async def _fetch_chart_version(
-        self,
-        chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml file, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
-        github_token: Annotated[Secret, Doc("GitHub token for private repo access (optional)")] = None,
-    ) -> str:
-        """
-        Fetch the current Helm chart version from a remote Chart.yaml file.
-        Uses authentication if github_token is provided.
-        Returns the current chart version string.
-        """
-        # Prepare container with curl and yq for fetching and parsing YAML
-        container = (
-            dag.container()
-            .from_("alpine:latest")
-            .with_exec(["apk", "add", "--no-cache", "curl", "yq"])
-        )
-        # Use token if provided for private repo access
-        if github_token:
-            container = container.with_secret_variable("GITHUB_TOKEN", github_token)
-            curl_cmd = "curl -s -H \"Authorization: Bearer $GITHUB_TOKEN\" " + chart_yaml_url + " | yq '.version'"
-        else:
-            curl_cmd = f"curl -s {chart_yaml_url} | yq '.version'"
-        # Execute command in container and parse version
-        chart_version = await (
-            container
-            .with_exec(["sh", "-c", curl_cmd])
-            .stdout()
-        )
-        return chart_version.strip()
+    # async def _fetch_chart_version(
+    #     self,
+    #     chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml file, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
+    #     github_token: Annotated[Secret, Doc("GitHub token for private repo access (optional)")] = None,
+    # ) -> str:
+    #     """
+    #     Fetch the current Helm chart version from a remote Chart.yaml file.
+    #     Uses authentication if github_token is provided.
+    #     Returns the current chart version string.
+    #     """
+    #     # Prepare container with curl and yq for fetching and parsing YAML
+    #     container = (
+    #         dag.container()
+    #         .from_("alpine:latest")
+    #         .with_exec(["apk", "add", "--no-cache", "curl", "yq"])
+    #     )
+    #     # Use token if provided for private repo access
+    #     if github_token:
+    #         container = container.with_secret_variable("GITHUB_TOKEN", github_token)
+    #         curl_cmd = "curl -s -H \"Authorization: Bearer $GITHUB_TOKEN\" " + chart_yaml_url + " | yq '.version'"
+    #     else:
+    #         curl_cmd = f"curl -s {chart_yaml_url} | yq '.version'"
+    #     # Execute command in container and parse version
+    #     chart_version = await (
+    #         container
+    #         .with_exec(["sh", "-c", curl_cmd])
+    #         .stdout()
+    #     )
+    #     return chart_version.strip()
 
     async def _update_chart_files(
         self,
         github_token: Annotated[Secret, Doc("GitHub token for authentication")],
         repository_url: Annotated[str, Doc("GitHub repository URL, e.g. 'https://github.com/org/repo.git'")],
         branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
-        app_name: Annotated[str, Doc("Name of the Helm chart/app, e.g. 'my-app'")],
-        new_app_version: Annotated[str, Doc("New application version, e.g. '1.2.3'")],
+        values_json: Annotated[JSON, Doc("JSON object with app_name, app_version, and nested image.tag, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'")],
         chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
-        values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")],
+        values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")] = "values.yaml",
         chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")] = ".",
     ) -> None:
         """
@@ -56,7 +55,19 @@ class ChartUpdater:
         """
         repo_path = "/repo"
         chart_path = chart_path or "."
+        values_file = values_file or "values.yaml"
         full_chart_path = f"{repo_path}/{chart_path}"
+
+        # Parse values_json
+        if isinstance(values_json, dict):
+            app_name = values_json["app_name"]
+            app_version = values_json["app_version"]
+            values_dict = values_json
+        else:
+            value_dict = json.loads(values_json)
+            app_name = value_dict["app_name"]
+            app_version = value_dict["app_version"]
+            values_dict = value_dict
 
         # Prepare container for git, yq, and helm operations
         container = (
@@ -81,13 +92,25 @@ class ChartUpdater:
         chart_version = chart_version.strip()
         new_chart_version = self._increment_patch_version(chart_version)
 
-        # Update Chart.yaml and values file with new versions
+        # Update Chart.yaml with new versions
         container = (
             container
-            .with_exec(["yq", "-i", f'.version = \"{new_chart_version}\"', "Chart.yaml"])
-            .with_exec(["yq", "-i", f'.appVersion = \"{new_app_version}\"', "Chart.yaml"])
-            .with_exec(["yq", "-i", f'.image.tag = \"{new_app_version}\"', values_file])
-            # Set remote URL with token for push
+            .with_exec(["yq", "-i", f'.version = "{new_chart_version}"', "Chart.yaml"])
+            .with_exec(["yq", "-i", f'.appVersion = "{app_version}"', "Chart.yaml"])
+        )
+        # Recursively apply all key/values from values_json to the values file
+        def apply_yq(container, d, prefix=""):
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    container = apply_yq(container, v, prefix + k + ".")
+                else:
+                    yq_key = "." + prefix + k
+                    container = container.with_exec(["yq", "-i", f'{yq_key} = "{v}"', values_file])
+            return container
+        container = apply_yq(container, values_dict)
+        # Set remote URL with token for push
+        container = (
+            container
             .with_exec([
                 "sh", "-c",
                 f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{repository_url.split("/")[-2]}/{repository_url.split("/")[-1]}.git"'
@@ -95,7 +118,7 @@ class ChartUpdater:
             .with_exec(["git", "add", "."])
             .with_exec([
                 "git", "commit", "-m",
-                f"Update {app_name}:{new_app_version} chart version to {new_chart_version}"
+                f"Update {app_name}:{app_version} chart version to {new_chart_version}"
             ])
             .with_exec(["git", "push", "origin", branch])
         )
@@ -116,35 +139,28 @@ class ChartUpdater:
     @function
     async def updatechart(
         self,
-        value_json: Annotated[JSON, Doc("JSON object with app_name and app_version, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\"}'")],
+        values_json: Annotated[JSON, Doc(
+            "JSON object with app_name, app_version, and nested image.tag, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'"
+        )],
         chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
         github_token: Annotated[Secret, Doc("GitHub token for authentication")],
         repository_url: Annotated[str, Doc("GitHub repository URL, e.g. 'https://github.com/org/repo.git'")],
         branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
-        values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")],
+        values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")] = "values.yaml",
         chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")] = ".",
     ) -> None:
         """
         Main entrypoint: Update the Helm chart version and app version in Chart.yaml and values file.
         Raises QueryError if fetching or incrementing chart version fails.
         """
-        # Ensure value_json is a dict (Dagger passes JSON as a string)
-        if isinstance(value_json, dict):
-            app_name = value_json["app_name"]
-            app_version = value_json["app_version"]
-        else:
-            value_dict = json.loads(value_json)
-            app_name = value_dict["app_name"]
-            app_version = value_dict["app_version"]
         chart_path = chart_path or "."
+        values_file = values_file or "values.yaml"
         try:
-            # Fetch current chart version and increment it inside _update_chart_files
             await self._update_chart_files(
                 github_token=github_token,
                 repository_url=repository_url,
                 branch=branch,
-                app_name=app_name,
-                new_app_version=app_version,
+                values_json=values_json,
                 chart_yaml_url=chart_yaml_url,
                 values_file=values_file,
                 chart_path=chart_path,
