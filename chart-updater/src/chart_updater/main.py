@@ -43,10 +43,9 @@ class ChartUpdater:
     async def _update_chart_files(
         self,
         github_token: Annotated[Secret, Doc("GitHub token for authentication")],
-        repository_url: Annotated[str, Doc("GitHub repository URL, e.g. 'https://github.com/org/repo.git'")],
+        helm_repo_url: Annotated[str, Doc("Helm chart repository URL (git), e.g. 'https://github.com/org/repo.git'")],
         branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
         values_json: Annotated[JSON, Doc("JSON object with app_name, app_version, and nested image.tag, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'")],
-        chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
         values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")] = "values.yaml",
         chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")] = ".",
     ) -> None:
@@ -78,15 +77,14 @@ class ChartUpdater:
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_workdir(repo_path)
-            .with_exec(["git", "clone", "--branch", branch, repository_url, "."])
+            .with_exec(["git", "clone", "--branch", branch, helm_repo_url, "."])
             .with_workdir(full_chart_path)
         )
 
-        # Fetch current chart version from remote Chart.yaml
-        curl_cmd = f"curl -s {chart_yaml_url} | yq '.version'"
+        # Fetch current chart version from local Chart.yaml in the cloned repo
         chart_version = await (
             container
-            .with_exec(["sh", "-c", curl_cmd])
+            .with_exec(["yq", ".version", "Chart.yaml"])
             .stdout()
         )
         chart_version = chart_version.strip()
@@ -113,7 +111,7 @@ class ChartUpdater:
             container
             .with_exec([
                 "sh", "-c",
-                f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{repository_url.split("/")[-2]}/{repository_url.split("/")[-1]}.git"'
+                f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{helm_repo_url.split("/")[-2]}/{helm_repo_url.split("/")[-1]}.git"'
             ])
             .with_exec(["git", "add", "."])
             .with_exec([
@@ -142,9 +140,8 @@ class ChartUpdater:
         values_json: Annotated[JSON, Doc(
             "JSON object with app_name, app_version, and nested image.tag, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'"
         )],
-        chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
         github_token: Annotated[Secret, Doc("GitHub token for authentication")],
-        repository_url: Annotated[str, Doc("GitHub repository URL, e.g. 'https://github.com/org/repo.git'")],
+        helm_repo_url: Annotated[str, Doc("Helm chart repository URL (git), e.g. 'https://github.com/org/repo.git'")],
         branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
         values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")] = "values.yaml",
         chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")] = ".",
@@ -158,10 +155,9 @@ class ChartUpdater:
         try:
             await self._update_chart_files(
                 github_token=github_token,
-                repository_url=repository_url,
+                helm_repo_url=helm_repo_url,
                 branch=branch,
                 values_json=values_json,
-                chart_yaml_url=chart_yaml_url,
                 values_file=values_file,
                 chart_path=chart_path,
             )
