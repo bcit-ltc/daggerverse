@@ -128,8 +128,14 @@ class ChartUpdater:
         Main entrypoint: Update the Helm chart version and app version in Chart.yaml and values file.
         Raises QueryError if fetching or incrementing chart version fails.
         """
-        app_name = value_json.get("app_name")
-        app_version = value_json.get("app_version")
+        # Ensure value_json is a dict (Dagger passes JSON as a string)
+        if isinstance(value_json, dict):
+            app_name = value_json["app_name"]
+            app_version = value_json["app_version"]
+        else:
+            value_dict = json.loads(value_json)
+            app_name = value_dict["app_name"]
+            app_version = value_dict["app_version"]
         chart_path = chart_path or "."
         try:
             # Fetch current chart version and increment it inside _update_chart_files
