@@ -10,44 +10,15 @@ import json
 
 @object_type
 class ChartUpdater:
-    # async def _fetch_chart_version(
-    #     self,
-    #     chart_yaml_url: Annotated[str, Doc("URL to Chart.yaml file, e.g. 'https://raw.githubusercontent.com/org/repo/Chart.yaml'")],
-    #     github_token: Annotated[Secret, Doc("GitHub token for private repo access (optional)")] = None,
-    # ) -> str:
-    #     """
-    #     Fetch the current Helm chart version from a remote Chart.yaml file.
-    #     Uses authentication if github_token is provided.
-    #     Returns the current chart version string.
-    #     """
-    #     # Prepare container with curl and yq for fetching and parsing YAML
-    #     container = (
-    #         dag.container()
-    #         .from_("alpine:latest")
-    #         .with_exec(["apk", "add", "--no-cache", "curl", "yq"])
-    #     )
-    #     # Use token if provided for private repo access
-    #     if github_token:
-    #         container = container.with_secret_variable("GITHUB_TOKEN", github_token)
-    #         curl_cmd = "curl -s -H \"Authorization: Bearer $GITHUB_TOKEN\" " + chart_yaml_url + " | yq '.version'"
-    #     else:
-    #         curl_cmd = f"curl -s {chart_yaml_url} | yq '.version'"
-    #     # Execute command in container and parse version
-    #     chart_version = await (
-    #         container
-    #         .with_exec(["sh", "-c", curl_cmd])
-    #         .stdout()
-    #     )
-    #     return chart_version.strip()
 
     async def _update_chart_files(
         self,
-        github_token: Annotated[Secret, Doc("GitHub token for authentication")],
-        helm_repo_url: Annotated[str, Doc("Helm chart repository URL (git), e.g. 'https://github.com/org/repo.git'")],
-        branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
-        values_json: Annotated[JSON, Doc("JSON object with app_name, app_version, and nested image.tag, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'")],
-        values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")] = "values.yaml",
-        chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")] = ".",
+        github_token: Annotated[Secret, Doc("GitHub token for authentication with GitHub (used for clone/push)")],
+        helm_repo_url: Annotated[str, Doc("Git repository URL containing the Helm chart(s), e.g. 'https://github.com/org/repo.git'")],
+        branch: Annotated[str, Doc("Git branch to update, e.g. 'main'")],
+        values_json: Annotated[JSON, Doc("JSON object with all values to update, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'")],
+        values_file: Annotated[str, Doc("Relative path to the values file to update (default: 'values.yaml'), e.g. 'values.yaml' or 'charts/my-app/values.yaml'")] = "values.yaml",
+        chart_path: Annotated[str, Doc("Relative path to the chart directory containing Chart.yaml (default: '.'), e.g. '.' or 'charts/my-app'")] = ".",
     ) -> None:
         """
         Clone the repository, fetch Chart.yaml version, update Chart.yaml and values file with new versions, commit, and push changes.
@@ -139,13 +110,13 @@ class ChartUpdater:
     async def updatechart(
         self,
         values_json: Annotated[JSON, Doc(
-            "JSON object with app_name, app_version, and nested image.tag, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'"
+            "JSON object with all values to update, e.g. '{\"app_name\": \"my-app\", \"app_version\": \"1.2.3\", \"image\": {\"tag\": \"1.2.3\"}}'"
         )],
-        github_token: Annotated[Secret, Doc("GitHub token for authentication")],
-        helm_repo_url: Annotated[str, Doc("Helm chart repository URL (git), e.g. 'https://github.com/org/repo.git'")],
-        branch: Annotated[str, Doc("Branch to update, e.g. 'main'")],
-        values_file: Annotated[str, Doc("Path to values file to update, e.g. 'values.yaml'")] = "values.yaml",
-        chart_path: Annotated[str, Doc("Path to the chart directory containing Chart.yaml, e.g. 'charts/my-app'")] = ".",
+        github_token: Annotated[Secret, Doc("GitHub token for authentication with GitHub (used for clone/push)")],
+        helm_repo_url: Annotated[str, Doc("Git repository URL containing the Helm chart(s), e.g. 'https://github.com/org/repo.git'")],
+        branch: Annotated[str, Doc("Git branch to update, e.g. 'main'")],
+        values_file: Annotated[str, Doc("Relative path to the values file to update (default: 'values.yaml'), e.g. 'values.yaml' or 'charts/my-app/values.yaml'")] = "values.yaml",
+        chart_path: Annotated[str, Doc("Relative path to the chart directory containing Chart.yaml (default: '.'), e.g. '.' or 'charts/my-app'")] = ".",
     ) -> None:
         """
         Main entrypoint: Update the Helm chart version and app version in Chart.yaml and values file.
