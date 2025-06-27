@@ -84,7 +84,7 @@ class ChartUpdater:
         # Fetch current chart version from local Chart.yaml in the cloned repo
         chart_version = await (
             container
-            .with_exec(["yq", "eval", ".version", "Chart.yaml"])
+            .with_exec(["sh", "-c", "yq eval '.version' Chart.yaml"])
             .stdout()
         )
         chart_version = chart_version.strip()
