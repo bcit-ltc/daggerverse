@@ -4,12 +4,54 @@ ChartUpdater: Dagger object for automating Helm chart version updates in GitHub 
 - Increments semantic version
 - Updates Chart.yaml and values file in repo, commits, and pushes changes
 """
-from dagger import dag, function, object_type, Secret, Doc, QueryError, JSON
+from dagger import dag, function, object_type, Secret, Doc, QueryError, JSON, Container
 from typing import Annotated
 import json
 
 @object_type
 class ChartUpdater:
+
+    def _increment_patch_version(
+            self,
+            version: str
+        ) -> str:
+        """
+        Increment the patch part of a semantic version string (e.g., 1.2.3 -> 1.2.4).
+        Returns the incremented version string.
+        Raises ValueError if version format is invalid.
+        """
+        parts = version.strip().split(".")
+        if len(parts) == 3:
+            major, minor, patch = parts
+            return f"{major}.{minor}.{int(patch) + 1}"
+        raise ValueError(f"Invalid version format: {version}")
+
+
+    def _set_yaml_values(
+        self,
+        dagger_container: Container,
+        values_dict: dict[str, object],
+        values_file: str,
+        prefix: str = ""
+    ) -> Container:
+        """
+        Recursively apply all key/value pairs from a nested dictionary to a YAML file using yq.
+        Each key path is converted to a yq expression, supporting nested updates (e.g., image.tag).
+        Args:
+            dagger_container (dagger.Container): The Dagger container to apply yq commands to.
+            values_dict (dict[str, object]): The dictionary of values to apply (can be nested).
+            values_file (str): The path to the values YAML file to update.
+            prefix (str, optional): Used internally for recursion to build nested key paths. Defaults to "".
+        Returns:
+            dagger.Container: The updated dagger container with all yq commands applied.
+        """
+        for key, value in values_dict.items():
+            if isinstance(value, dict):
+                dagger_container = self._set_yaml_values(dagger_container, value, values_file, prefix + key + ".")
+            else:
+                yq_key = "." + prefix + key
+                dagger_container = dagger_container.with_exec(["yq", "-i", f'{yq_key} = "{value}"', values_file])
+        return dagger_container
 
     async def _update_chart_files(
         self,
@@ -40,7 +82,7 @@ class ChartUpdater:
             values_dict = value_dict
 
         # Prepare container for git, yq, and helm operations
-        container = (
+        helm_container = (
             dag.container()
             .from_("alpine/helm:3.18.3")
             .with_exec(["apk", "add", "--no-cache", "git", "yq", "curl"])
@@ -55,7 +97,7 @@ class ChartUpdater:
         # Fetch current chart version from Chart.yaml in the correct directory (support both root and subdir)
         chart_yaml_path = f"{full_chart_path}/Chart.yaml" if chart_path != "." else "Chart.yaml"
         chart_version = await (
-            container
+            helm_container
             .with_exec(["sh", "-c", f"yq eval '.version' '{chart_yaml_path}'"])
             .stdout()
         )
@@ -63,24 +105,16 @@ class ChartUpdater:
         new_chart_version = self._increment_patch_version(chart_version)
 
         # Update Chart.yaml with new versions
-        container = (
-            container
+        helm_container = (
+            helm_container
             .with_exec(["yq", "-i", f'.version = "{new_chart_version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.appVersion = "{app_version}"', "Chart.yaml"])
         )
         # Recursively apply all key/values from values_json to the values file
-        def apply_yq(container, d, prefix=""):
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    container = apply_yq(container, v, prefix + k + ".")
-                else:
-                    yq_key = "." + prefix + k
-                    container = container.with_exec(["yq", "-i", f'{yq_key} = "{v}"', values_file])
-            return container
-        container = apply_yq(container, values_dict)
+        helm_container = self._set_yaml_values(helm_container, values_dict, values_file)
         # Set remote URL with token for push
-        container = (
-            container
+        helm_container = (
+            helm_container
             .with_exec([
                 "sh", "-c",
                 f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{helm_repo_url.split("/")[-2]}/{helm_repo_url.split("/")[-1]}.git"'
@@ -92,20 +126,9 @@ class ChartUpdater:
             ])
             .with_exec(["git", "push", "origin", branch])
         )
-        await container.stdout()
+        await helm_container.stdout()
 
-    def _increment_patch_version(self, version: Annotated[str, Doc("Semantic version string, e.g. '1.2.3'")]) -> str:
-        """
-        Increment the patch part of a semantic version string (e.g., 1.2.3 -> 1.2.4).
-        Returns the incremented version string.
-        Raises ValueError if version format is invalid.
-        """
-        parts = version.strip().split(".")
-        if len(parts) == 3:
-            major, minor, patch = parts
-            return f"{major}.{minor}.{int(patch) + 1}"
-        raise ValueError(f"Invalid version format: {version}")
-
+    
     @function
     async def updatechart(
         self,
