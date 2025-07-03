@@ -34,7 +34,7 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR).with_exec(
-            ["helm", "login", 
+            ["helm", "registry", "login", 
              "--username", self.username, 
              "--password", self.github_token, 
              f"oci://ghcr.io/bcit-ltc/oci/{self.appname}"]
