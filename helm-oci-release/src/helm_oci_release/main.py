@@ -12,7 +12,12 @@ class HelmOciRelease:
     @function
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
+            github_token: Annotated[Secret | None, Doc("Github Token")],
+            appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
             ) -> str:
+
+        self.github_token = github_token
+        self.appname = appname
 
         await self._prepare_helm_container(source)
         await self._setup_helm_directory(source)
@@ -27,11 +32,10 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR).with_exec(
+            ["ls", "-la"]).with_workdir(WORKDIR + "/" + self.appname).with_exec(
             ["ls", "-la"])
 
         return await result.stdout()
-    
-
 
     async def _prepare_helm_container(self, source: Directory) -> Container:
         self.helm_container =  await dag.container().from_(HELM_IMAGE)
