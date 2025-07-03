@@ -34,11 +34,10 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR
-        ).with_env_variable("OCIREGISTRY_USERNAME", self.username
-        ).with_secret_variable("OCIREGISTRY_PASSWORD", self.github_token
+        ).with_env_variable("GHCR_USERNAME", self.username
+        ).with_secret_variable("GHCR_PASSWORD", self.github_token
         ).with_exec(
-        ["helm", "registry", "login",
-            f"oci://ghcr.io/bcit-ltc"]
+        ["helm", "registry", "login", "ghcr.io"]
         ).with_workdir(WORKDIR + "/" + self.appname).with_exec(
         ["ls", "-la"])
 
