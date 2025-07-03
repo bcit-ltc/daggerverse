@@ -46,7 +46,7 @@ class HelmOciRelease:
         ).with_exec(
             ["ls", "-la"]
         ).with_exec(
-            ["helm", "push", "oci://ghcr.io/" + "bcit-ltc" + "/" + self.appname]
+            ["helm", "push", "oci-1.0.0.tgz", "oci://ghcr.io/" + "bcit-ltc" + "/" + self.appname]
         )
 
         return await result.stdout()
