@@ -13,10 +13,12 @@ class HelmOciRelease:
     async def run(self,
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret | None, Doc("Github Token")],
+            username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
             ) -> str:
 
         self.github_token = github_token
+        self.username = username
         self.appname = appname
 
         await self._prepare_helm_container(source)
@@ -32,7 +34,11 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR).with_exec(
-            ["ls", "-la"]).with_workdir(WORKDIR + "/" + self.appname).with_exec(
+            ["helm", "login", 
+             "--username", self.username, 
+             "--password", self.github_token, 
+             f"oci://ghcr.io/bcit-ltc/oci/{self.appname}"]
+            ).with_workdir(WORKDIR + "/" + self.appname).with_exec(
             ["ls", "-la"])
 
         return await result.stdout()
