@@ -38,7 +38,7 @@ class HelmOciRelease:
         ).with_secret_variable("OCIREGISTRY_PASSWORD", self.github_token
         ).with_exec(
         ["helm", "registry", "login",
-            f"oci://ghcr.io/bcit-ltc/oci/{self.appname}"]
+            f"oci://ghcr.io/bcit-ltc"]
         ).with_workdir(WORKDIR + "/" + self.appname).with_exec(
         ["ls", "-la"])
 
