@@ -34,7 +34,7 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR
-        ).with_environment_variable("OCIREGISTRY_USERNAME", self.username
+        ).with_env_variable("OCIREGISTRY_USERNAME", self.username
         ).with_secret_variable("OCIREGISTRY_PASSWORD", self.github_token
         ).with_exec(
         ["helm", "registry", "login", 
