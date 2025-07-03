@@ -144,7 +144,7 @@ class PipelineManager:
             print("Not running semantic release for this environment")
             self.semantic_release_result = None
 
-    def _create_helm_container(self, github_token, repo_path, branch, helm_repo_url, full_chart_path):
+    def _create_helm_container(self):
         """
         Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
         """
@@ -152,33 +152,20 @@ class PipelineManager:
             dag.container()
             .from_("alpine/helm:3.18.3")
             .with_exec(["apk", "add", "--no-cache", "git", "yq", "curl"])
-            .with_secret_variable("GITHUB_TOKEN", github_token)
+            .with_secret_variable("GITHUB_TOKEN", self.helm_repo_pat)
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
-            .with_workdir(repo_path)
-            .with_exec(["git", "clone", "--branch", branch, helm_repo_url, "."])
-            .with_workdir(full_chart_path)
+            .with_workdir("/repo")
+            .with_exec(["git", "clone", "--branch", self.branch, self.helm_repo_url, "."])
         )
 
 
-    async def _get_chart_version(self, helm_container, chart_yaml_path):
-        """
-        Fetch the current chart version from Chart.yaml using yq.
-        """
-        chart_version = await (
-            helm_container
-            .with_exec(["sh", "-c", f"yq eval '.version' '{chart_yaml_path}'"])
-            .stdout()
-        )
-        return chart_version.strip()
-
-
-    async def _commit_and_push_changes(self, helm_container, helm_repo_url, app_name, app_version, branch):
+    async def _commit_and_push_changes(self, helm_container):
         """
         Commit and push changes to the remote Helm repo.
         """
-        owner = helm_repo_url.split("/")[-2]
-        repo = helm_repo_url.split("/")[-1]
+        owner = self.helm_repo_url.split("/")[-2]
+        repo = self.helm_repo_url.split("/")[-1]
         return (
             helm_container
             .with_exec([
@@ -188,45 +175,31 @@ class PipelineManager:
             .with_exec(["git", "add", "."])
             .with_exec([
                 "git", "commit", "-m",
-                f"Update {app_name} to version {app_version}"
+                f"Update {self.app_name} to version {self.version}"
             ])
-            .with_exec(["git", "push", "origin", branch])
+            .with_exec(["git", "push", "origin", self.branch])
         )
 
 
     @function
-    async def _update_chart_files(
-        self,
-        helm_repo_pat: Annotated[Secret, Doc("GitHub token for authentication with GitHub (used for clone/push)")],
-        helm_repo_url: Annotated[str, Doc("Git repository URL containing the Helm chart(s), e.g. 'https://github.com/org/repo.git'")],
-        branch: Annotated[str, Doc("Git branch to update, e.g. 'main'")],
-        app_version: Annotated[str, Doc("The new app version to set in Chart.yaml and values.yaml")],
-        values_file: Annotated[str, Doc("Relative path to the values file to update (default: 'values.yaml'), e.g. 'values.yaml' or 'charts/my-app/values.yaml'")] = "values.yaml",
-        chart_path: Annotated[str, Doc("Relative path to the chart directory containing Chart.yaml (default: '.'), e.g. '.' or 'charts/my-app'")] = ".",
-    ) -> None:
+    async def _update_chart_files(self) -> None:
         """
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
         """
-        repo_path = "/repo"
-        chart_path = chart_path or "."
-        values_file = values_file or "values.yaml"
-        full_chart_path = f"{repo_path}/{chart_path}"
+        values_file = "values.yaml" if self.environment == Environment.STABLE else "latest_values.yaml"
 
         # Prepare container for git, yq, and helm operations
-        helm_container = self._create_helm_container(helm_repo_pat, repo_path, branch, helm_repo_url, full_chart_path)
+        helm_container = self._create_helm_container()
 
         # Update Chart.yaml and values file with new app version
         helm_container = (
             helm_container
-            .with_exec(["yq", "-i", f'.appVersion = "{app_version}"', "Chart.yaml"])
-            .with_exec(["yq", "-i", f'.image.tag = "{app_version}"', values_file])
+            .with_exec(["yq", "-i", f'.appVersion = "{self.version}"', "Chart.yaml"])
+            .with_exec(["yq", "-i", f'.image.tag = "{self.version}"', values_file])
         )
 
         # Commit and push changes
-        app_name = helm_repo_url.split("/")[-1]
-        helm_container = await self._commit_and_push_changes(
-            helm_container, helm_repo_url, app_name, app_version, app_version, branch
-        )
+        helm_container = await self._commit_and_push_changes(helm_container)
         await helm_container.stdout()
 
     @function
@@ -281,12 +254,8 @@ class PipelineManager:
 
         # Update Helm chart files if running in stable or latest environment. The only difference is that latest use latest_values.yaml.
         if self.environment in [Environment.STABLE, Environment.LATEST]:
-            await self._update_chart_files(
-                helm_repo_pat=helm_repo_pat,
-                helm_repo_url=f"{self.repository_url}-helm",
-                branch=branch,
-                app_version=self.version,
-                values_file="values.yaml" if self.environment == Environment.STABLE else "latest_values.yaml",
-            )
+            self.helm_repo_pat = helm_repo_pat
+            self.helm_repo_url = f"{self.repository_url}-helm"
+            await self._update_chart_files()
         else:
             print("Not updating Helm chart files for this environment")
