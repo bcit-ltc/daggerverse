@@ -34,13 +34,14 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR
-        # ).with_env_variable("GHCR_USERNAME", self.username
-        # ).with_secret_variable("GHCR_PASSWORD", self.github_token
+        ).with_env_variable("GHCR_USERNAME", self.username
+        ).with_secret_variable("GHCR_PASSWORD", self.github_token
         ).with_exec([
-            "helm", "registry", "login",
-            "-u", "bcit-ltc",
-            "--password", self.github_token,
-            "ghcr.io"
+            # "helm", "registry", "login",
+            # "-u", "bcit-ltc",
+            # "--password", self.github_token,
+            # "ghcr.io"
+            "sh", "-c", 'echo "$GHCR_PASSWORD" | helm registry login ghcr.io --username bcit-ltc --password-stdin'
         ]
         ).with_workdir(WORKDIR + "/" + self.appname
         ).with_exec(
