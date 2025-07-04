@@ -46,7 +46,7 @@ class HelmOciRelease:
         ).with_exec(
             ["ls", "-la"]
         ).with_exec(
-            ["helm", "package", "."]
+            ["helm", "package", ".", f"{self.appname}-1.0.0.tgz"]
         ).with_exec(
             ["ls", "-la"]
         ).with_exec(
