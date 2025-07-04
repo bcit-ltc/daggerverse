@@ -44,7 +44,9 @@ class HelmOciRelease:
         ]
         ).with_workdir(WORKDIR + "/" + self.appname
         ).with_exec(
-            ["ls", "-la"]
+            ["helm", "registry", "list"]
+        ).with_exec(
+            ["helm", "show", "all", f"oci://ghcr.io/bcit-ltc/{self.appname}"]
         ).with_exec(
             ["helm", "package", ".", f"{self.appname}-1.0.0.tgz"]
         ).with_exec(
