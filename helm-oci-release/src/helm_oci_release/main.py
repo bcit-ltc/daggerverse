@@ -36,8 +36,12 @@ class HelmOciRelease:
         ).with_workdir(WORKDIR
         ).with_env_variable("GHCR_USERNAME", self.username
         ).with_secret_variable("GHCR_PASSWORD", self.github_token
-        ).with_exec(
-            ["echo", "$GHCR_PASSWORD", "|", "helm", "registry", "login", "-u", "bcit-ltc", "--password-stdin", "ghcr.io"]
+        ).with_exec([
+            "helm", "registry", "login",
+            "-u", "bcit-ltc",
+            "--password", self.github_token,
+            "ghcr.io"
+        ]
         ).with_workdir(WORKDIR + "/" + self.appname
         ).with_exec(
             ["ls", "-la"]
