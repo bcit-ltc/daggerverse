@@ -44,10 +44,10 @@ class HelmOciRelease:
             "sh", "-c", 'echo "$GHCR_PASSWORD" | helm registry login ghcr.io --username bcit-ltc --password-stdin'
         ]
         ).with_workdir(WORKDIR + "/" + self.appname
-        ).with_exec(
-            ["helm", "registry", "list"]
-        ).with_exec(
-            ["helm", "show", "all", f"oci://ghcr.io/bcit-ltc/{self.appname}"]
+        # ).with_exec(
+        #     ["helm", "registry", "list"]
+        # ).with_exec(
+        #     ["helm", "show", "all", f"oci://ghcr.io/bcit-ltc/{self.appname}"]
         ).with_exec(
             ["helm", "package", ".", f"{self.appname}-1.0.0.tgz"]
         ).with_exec(
