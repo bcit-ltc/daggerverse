@@ -50,7 +50,7 @@ class HelmOciRelease:
         ).with_exec(
             ["ls", "-la"]
         ).with_exec(
-            ["helm", "push", "oci-1.0.0.tgz", "oci://ghcr.io/bcit-ltc/oci"]
+            ["helm", "push", f"{self.appname}-1.0.0.tgz", f"oci://ghcr.io/bcit-ltc/{self.appname}"]
         )
 
         return await result.stdout()
