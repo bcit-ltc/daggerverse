@@ -38,7 +38,7 @@ class HelmOciRelease:
         # ).with_secret_variable("GHCR_PASSWORD", self.github_token
         ).with_exec([
             "helm", "registry", "login",
-            "-u", self.username,
+            "-u", "bcit-ltc",
             "--password", self.github_token,
             "ghcr.io"
         ]
