@@ -73,7 +73,7 @@ class HelmOciRelease:
         """
         login_cmd = (
             f'echo "$GHCR_PASSWORD" | helm registry login ghcr.io '
-            f'--username bcit-ltc --password-stdin'
+            f'--username {username} --password-stdin'
         )
         return await container.with_exec(["sh", "-c", login_cmd])
 
