@@ -87,6 +87,10 @@ class HelmOciRelease:
             f"echo 'name: {self.appname}' > Chart.yaml.tmp && grep -v '^name:' Chart.yaml >> Chart.yaml.tmp && mv Chart.yaml.tmp Chart.yaml"
         ])
 
+        await container.with_exec(
+            ["cat", "Chart.yaml"]
+        )
+
         return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
     async def helm_list_contents(self, container: Container) -> Container:
