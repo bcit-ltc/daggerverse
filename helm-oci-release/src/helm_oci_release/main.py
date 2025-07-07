@@ -7,7 +7,7 @@ WORKDIR = "/app"
 
 @object_type
 class HelmOciRelease:
-    helm_container: Container | None = None  # Container for Helm operations
+    # helm_container: Container | None = None  # Container for Helm operations
 
     @function
     async def run(self,
@@ -31,9 +31,10 @@ class HelmOciRelease:
             container = await self.set_workdir(container, f"{WORKDIR}/{appname}")
             container = await self.add_ghcr_password_secret(container, github_token)
             container = await self.helm_login(container, username)
+            container = await self.update_chart_name(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/bcit-ltc/{appname}/oci")
+            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/bcit-ltc/oci/{appname}")
 
             # await self._prepare_helm_container(source)
             # await self._setup_helm_directory(source)
@@ -76,18 +77,22 @@ class HelmOciRelease:
         )
         return await container.with_exec(["sh", "-c", login_cmd])
 
-    async def helm_package(self, container: Container) -> Container:
+    async def update_chart_name(self, container: Container) -> Container:
         """
-        Packages the Helm chart.
+        Updates the Chart.yaml file.
         """
         # Use built-in shell commands available in Alpine (sh, echo, cat, etc.)
         # Use 'sh' to update Chart.yaml without sed
-        temp_container = await container.with_exec([
+        return await container.with_exec([
             "sh", "-c",
             f"echo 'name: {self.appname}' > Chart.yaml.tmp && grep -v '^name:' Chart.yaml >> Chart.yaml.tmp && mv Chart.yaml.tmp Chart.yaml && cat Chart.yaml"
         ])
 
-        return await temp_container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
+    async def helm_package(self, container: Container) -> Container:
+        """
+        Packages the Helm chart.
+        """
+        return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
     async def helm_list_contents(self, container: Container) -> Container:
         """
