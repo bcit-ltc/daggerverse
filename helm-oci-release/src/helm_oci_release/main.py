@@ -25,8 +25,11 @@ class HelmOciRelease:
         self.chart_version = chart_version
         self.app_version = app_version
 
-        await self._prepare_helm_container(source)
-        await self._setup_helm_directory(source)
+        try:
+            await self._prepare_helm_container(source)
+            await self._setup_helm_directory(source)
+        except Exception as e:
+            print(f"[ERROR] Pipeline failed: {e}")
 
         return None
 
