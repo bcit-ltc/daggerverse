@@ -80,7 +80,7 @@ class HelmOciRelease:
         """
         Packages the Helm chart.
         """
-        return await container.with_exec(["helm", "package", "."])
+        return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
     async def helm_list_contents(self, container: Container) -> Container:
         """
