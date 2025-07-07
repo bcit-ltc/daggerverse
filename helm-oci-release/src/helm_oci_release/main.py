@@ -26,40 +26,96 @@ class HelmOciRelease:
         self.app_version = app_version
 
         try:
-            await self._prepare_helm_container(source)
-            await self._setup_helm_directory(source)
+            container = await self.prepare_base_container()
+            container = await self.add_source_directory(container, source)
+            container = await self.set_workdir(container, f"{WORKDIR}/{appname}")
+            container = await self.add_ghcr_password_secret(container, github_token)
+            container = await self.helm_login(container, username)
+            container = await self.helm_package(container)
+            container = await self.helm_list_contents(container)
+            # container = await helm_push(container, "oci-1.0.0", repo_url)
+
+            # await self._prepare_helm_container(source)
+            # await self._setup_helm_directory(source)
         except Exception as e:
             print(f"[ERROR] Pipeline failed: {e}")
 
         return None
 
-    async def _setup_helm_directory(self, source: Directory) -> Directory:
+    async def prepare_base_container() -> Container:
         """
-        Set up the Helm directory structure in the container.
+        Pulls the Helm base image.
         """
-        
-        result = await self.helm_container.with_directory(
-            WORKDIR, source
-        ).with_workdir(WORKDIR
-        # ).with_env_variable("GHCR_USERNAME", self.username
-        ).with_secret_variable("GHCR_PASSWORD", self.github_token
-        ).with_exec([
-            "sh", "-c", 'echo "$GHCR_PASSWORD" | helm registry login ghcr.io --username bcit-ltc --password-stdin'
-        ]
-        ).with_workdir(WORKDIR + "/" + self.appname
-        ).with_exec(
-            ["helm", "package", "."]
-        ).with_exec(
-            ["ls", "-la"]
-        ).with_exec(
-            ["helm", "push", f"oci-1.0.0.tgz", f"oci://ghcr.io/bcit-ltc/oci"]
+        return await dag.container().from_(HELM_IMAGE)
+
+    async def add_source_directory(container: Container, source: Directory) -> Container:
+        """
+        Mounts the local source code.
+        """
+        return await container.with_directory(WORKDIR, source)
+
+    async def set_workdir(container: Container, path: str) -> Container:
+        """
+        Sets working directory.
+        """
+        return await container.with_workdir(path)
+
+    async def add_ghcr_password_secret(container: Container, github_token: Secret) -> Container:
+        """
+        Adds the GHCR secret.
+        """
+        return await container.with_secret_variable("GHCR_PASSWORD", github_token)
+
+    async def helm_login(container: Container, username: str) -> Container:
+        """
+        Runs helm registry login command.
+        """
+        login_cmd = (
+            f'echo "$GHCR_PASSWORD" | helm registry login ghcr.io '
+            f'--username bcit-ltc --password-stdin'
         )
+        return await container.with_exec(["sh", "-c", login_cmd])
 
-        return await result.stdout()
+    async def helm_package(container: Container) -> Container:
+        """
+        Packages the Helm chart.
+        """
+        return await container.with_exec(["helm", "package", "."])
 
-    async def _prepare_helm_container(self, source: Directory) -> Container:
-        self.helm_container =  await dag.container().from_(HELM_IMAGE)
-        return self.helm_container
+    async def helm_list_contents(container: Container) -> Container:
+        """
+        Lists contents for debugging.
+        """
+        return await container.with_exec(["ls", "-la"])
+
+
+    # async def _setup_helm_directory(self, source: Directory) -> Directory:
+    #     """
+    #     Set up the Helm directory structure in the container.
+    #     """
+        
+    #     result = await self.helm_container.with_directory(
+    #         WORKDIR, source
+    #     ).with_workdir(WORKDIR
+    #     # ).with_env_variable("GHCR_USERNAME", self.username
+    #     ).with_secret_variable("GHCR_PASSWORD", self.github_token
+    #     ).with_exec([
+    #         "sh", "-c", 'echo "$GHCR_PASSWORD" | helm registry login ghcr.io --username bcit-ltc --password-stdin'
+    #     ]
+    #     ).with_workdir(WORKDIR + "/" + self.appname
+    #     ).with_exec(
+    #         ["helm", "package", "."]
+    #     ).with_exec(
+    #         ["ls", "-la"]
+    #     ).with_exec(
+    #         ["helm", "push", f"oci-1.0.0.tgz", f"oci://ghcr.io/bcit-ltc/oci"]
+    #     )
+
+    #     return await result.stdout()
+
+    # async def _prepare_helm_container(self, source: Directory) -> Container:
+    #     self.helm_container =  await dag.container().from_(HELM_IMAGE)
+    #     return self.helm_container
     
     # async def _run_helm_command(self, command: str, args: list[str]) -> str:
     #     """
@@ -69,6 +125,6 @@ class HelmOciRelease:
     #     result = await container.with_exec(["helm", command] + args).stdout()
     #     return result
 
-    async def _helm_login(self, source: Directory) -> Container:
-        self.helm_container =  await dag.container().from_(HELM_IMAGE)
-        return self.helm_container
+    # async def _helm_login(self, source: Directory) -> Container:
+    #     self.helm_container =  await dag.container().from_(HELM_IMAGE)
+    #     return self.helm_container
