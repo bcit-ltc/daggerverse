@@ -33,7 +33,7 @@ class HelmOciRelease:
             container = await self.helm_login(container, username)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            # container = await helm_push(container, "oci-1.0.0", repo_url)
+            container = await self.helm_push(container, f"oci-{chart_version}", f"oci://ghcr.io/bcit-ltc/{appname}")
 
             # await self._prepare_helm_container(source)
             # await self._setup_helm_directory(source)
@@ -88,6 +88,13 @@ class HelmOciRelease:
         """
         return await container.with_exec(["ls", "-la"])
 
+    async def helm_push(self, container: Container, app_version: str, repo_url: str) -> Container:
+        """
+        Pushes the Helm chart to the registry.
+        """
+        return await container.with_exec([
+            "helm", "push", f"{app_version}.tgz", repo_url
+    ])
 
     # async def _setup_helm_directory(self, source: Directory) -> Directory:
     #     """
