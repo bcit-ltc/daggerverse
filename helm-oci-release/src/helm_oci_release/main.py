@@ -42,31 +42,31 @@ class HelmOciRelease:
 
         return None
 
-    async def prepare_base_container() -> Container:
+    async def prepare_base_container(self) -> Container:
         """
         Pulls the Helm base image.
         """
         return await dag.container().from_(HELM_IMAGE)
 
-    async def add_source_directory(container: Container, source: Directory) -> Container:
+    async def add_source_directory(self, container: Container, source: Directory) -> Container:
         """
         Mounts the local source code.
         """
         return await container.with_directory(WORKDIR, source)
 
-    async def set_workdir(container: Container, path: str) -> Container:
+    async def set_workdir(self, container: Container, path: str) -> Container:
         """
         Sets working directory.
         """
         return await container.with_workdir(path)
 
-    async def add_ghcr_password_secret(container: Container, github_token: Secret) -> Container:
+    async def add_ghcr_password_secret(self, container: Container, github_token: Secret) -> Container:
         """
         Adds the GHCR secret.
         """
         return await container.with_secret_variable("GHCR_PASSWORD", github_token)
 
-    async def helm_login(container: Container, username: str) -> Container:
+    async def helm_login(self, container: Container, username: str) -> Container:
         """
         Runs helm registry login command.
         """
@@ -76,13 +76,13 @@ class HelmOciRelease:
         )
         return await container.with_exec(["sh", "-c", login_cmd])
 
-    async def helm_package(container: Container) -> Container:
+    async def helm_package(self, container: Container) -> Container:
         """
         Packages the Helm chart.
         """
         return await container.with_exec(["helm", "package", "."])
 
-    async def helm_list_contents(container: Container) -> Container:
+    async def helm_list_contents(self, container: Container) -> Container:
         """
         Lists contents for debugging.
         """
