@@ -70,6 +70,12 @@ class HelmOciRelease:
         """
         Runs helm registry login command.
         """
+
+        await container.with_exec(
+            ["touch", "somefile.yaml"]
+        )
+
+
         login_cmd = (
             f'echo "$GHCR_PASSWORD" | helm registry login ghcr.io '
             f'--username bcit-ltc --password-stdin'
@@ -86,10 +92,6 @@ class HelmOciRelease:
             "sh", "-c",
             f"echo 'name: {self.appname}' > Chart.yaml.tmp && grep -v '^name:' Chart.yaml >> Chart.yaml.tmp && mv Chart.yaml.tmp Chart.yaml && cat Chart.yaml"
         ])
-
-        await container.with_exec(
-            ["touch", "somefile.yaml"]
-        )
 
         return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
