@@ -33,7 +33,7 @@ class HelmOciRelease:
             container = await self.helm_login(container, username)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"oci-{chart_version}", f"oci://ghcr.io/bcit-ltc/{appname}")
+            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/bcit-ltc/{appname}/oci")
 
             # await self._prepare_helm_container(source)
             # await self._setup_helm_directory(source)
@@ -80,6 +80,10 @@ class HelmOciRelease:
         """
         Packages the Helm chart.
         """
+        await container.with_exec(
+            ["sed", "-i.bak", f"'s/^name: .*/name: {self.appname}/'", "Chart.yaml"]
+        )
+
         return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
     async def helm_list_contents(self, container: Container) -> Container:
