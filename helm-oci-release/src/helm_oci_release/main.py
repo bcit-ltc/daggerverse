@@ -15,11 +15,15 @@ class HelmOciRelease:
             github_token: Annotated[Secret | None, Doc("Github Token")],
             username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
+            chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
+            app_version: Annotated[str, Doc("Application Version")] = "0.1.0",  # Application version
             ) -> str:
 
         self.github_token = github_token
         self.username = username
         self.appname = appname
+        self.chart_version = chart_version
+        self.app_version = app_version
 
         await self._prepare_helm_container(source)
         await self._setup_helm_directory(source)
@@ -34,20 +38,12 @@ class HelmOciRelease:
         result = await self.helm_container.with_directory(
             WORKDIR, source
         ).with_workdir(WORKDIR
-        ).with_env_variable("GHCR_USERNAME", self.username
+        # ).with_env_variable("GHCR_USERNAME", self.username
         ).with_secret_variable("GHCR_PASSWORD", self.github_token
         ).with_exec([
-            # "helm", "registry", "login",
-            # "-u", "bcit-ltc",
-            # "--password", self.github_token,
-            # "ghcr.io"
             "sh", "-c", 'echo "$GHCR_PASSWORD" | helm registry login ghcr.io --username bcit-ltc --password-stdin'
         ]
         ).with_workdir(WORKDIR + "/" + self.appname
-        # ).with_exec(
-        #     ["helm", "registry", "list"]
-        # ).with_exec(
-        #     ["helm", "show", "all", f"oci://ghcr.io/bcit-ltc/{self.appname}"]
         ).with_exec(
             ["helm", "package", "."]
         ).with_exec(
@@ -69,3 +65,7 @@ class HelmOciRelease:
     #     container = await self._prepare_helm_container()
     #     result = await container.with_exec(["helm", command] + args).stdout()
     #     return result
+
+    async def _helm_login(self, source: Directory) -> Container:
+        self.helm_container =  await dag.container().from_(HELM_IMAGE)
+        return self.helm_container
