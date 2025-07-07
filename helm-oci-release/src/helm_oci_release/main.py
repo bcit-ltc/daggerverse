@@ -14,6 +14,7 @@ class HelmOciRelease:
             source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
             github_token: Annotated[Secret | None, Doc("Github Token")],
             username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
+            organization: Annotated[str, Doc("Organization Name")] = "bcit-ltc",  # Organization name
             appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
             chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
             app_version: Annotated[str, Doc("Application Version")] = "0.1.0",  # Application version
@@ -21,6 +22,7 @@ class HelmOciRelease:
 
         self.github_token = github_token
         self.username = username
+        self.organization = organization
         self.appname = appname
         self.chart_version = chart_version
         self.app_version = app_version
@@ -30,11 +32,11 @@ class HelmOciRelease:
             container = await self.add_source_directory(container, source)
             container = await self.set_workdir(container, f"{WORKDIR}/{appname}")
             container = await self.add_ghcr_password_secret(container, github_token)
-            container = await self.helm_login(container, username)
+            container = await self.helm_login(container, organization)
             container = await self.update_chart_name(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/bcit-ltc/oci")
+            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/{organization}/oci")
 
             # await self._prepare_helm_container(source)
             # await self._setup_helm_directory(source)
