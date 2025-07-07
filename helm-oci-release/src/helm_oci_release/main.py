@@ -7,7 +7,7 @@ WORKDIR = "/app"
 
 @object_type
 class HelmOciRelease:
-    helm_container = None
+    helm_container: Container | None = None  # Container for Helm operations
 
     @function
     async def run(self,
