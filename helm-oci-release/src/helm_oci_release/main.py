@@ -80,9 +80,12 @@ class HelmOciRelease:
         """
         Packages the Helm chart.
         """
-        await container.with_exec(
-            ["sed", "-i.bak", f"'s/^name: .*/name: {self.appname}/'", "Chart.yaml"]
-        )
+        # Use built-in shell commands available in Alpine (sh, echo, cat, etc.)
+        # Use 'sh' to update Chart.yaml without sed
+        await container.with_exec([
+            "sh", "-c",
+            f"echo 'name: {self.appname}' > Chart.yaml.tmp && grep -v '^name:' Chart.yaml >> Chart.yaml.tmp && mv Chart.yaml.tmp Chart.yaml"
+        ])
 
         return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
