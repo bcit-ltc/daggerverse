@@ -70,12 +70,6 @@ class HelmOciRelease:
         """
         Runs helm registry login command.
         """
-
-        await container.with_exec(
-            ["touch", "somefile.yaml"]
-        )
-
-
         login_cmd = (
             f'echo "$GHCR_PASSWORD" | helm registry login ghcr.io '
             f'--username bcit-ltc --password-stdin'
@@ -88,12 +82,12 @@ class HelmOciRelease:
         """
         # Use built-in shell commands available in Alpine (sh, echo, cat, etc.)
         # Use 'sh' to update Chart.yaml without sed
-        await container.with_exec([
+        temp_container = await container.with_exec([
             "sh", "-c",
             f"echo 'name: {self.appname}' > Chart.yaml.tmp && grep -v '^name:' Chart.yaml >> Chart.yaml.tmp && mv Chart.yaml.tmp Chart.yaml && cat Chart.yaml"
         ])
 
-        return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
+        return await temp_container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
 
     async def helm_list_contents(self, container: Container) -> Container:
         """
