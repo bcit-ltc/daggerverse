@@ -34,7 +34,7 @@ class HelmOciRelease:
             container = await self.update_chart_name(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/bcit-ltc/oci/{appname}")
+            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/bcit-ltc/oci")
 
             # await self._prepare_helm_container(source)
             # await self._setup_helm_directory(source)
