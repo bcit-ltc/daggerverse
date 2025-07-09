@@ -276,11 +276,11 @@ class PipelineManager:
         print("Pipeline completed successfully")
 
         # Update Helm chart files if running in stable or latest environment. The only difference is that latest use latest_values.yaml.
-        if self.environment in [Environment.STABLE, Environment.LATEST]:
-            self.helm_repo_pat = helm_repo_pat
-            self.helm_repo_url = f"{self.repository_url}-helm"
-            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
-            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
-            await self._update_chart_files()
-        else:
-            print("Not updating Helm chart files for this environment")
+        # if self.environment in [Environment.STABLE, Environment.LATEST]:
+        self.helm_repo_pat = helm_repo_pat
+        self.helm_repo_url = f"{self.repository_url}-helm"
+        self.ghcr_owner = self.helm_repo_url.split("/")[-2]
+        self.helm_repo_name = self.helm_repo_url.split("/")[-1]
+        await self._update_chart_files()
+        # else:
+            # print("Not updating Helm chart files for this environment")
