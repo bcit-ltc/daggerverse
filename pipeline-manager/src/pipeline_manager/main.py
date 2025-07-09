@@ -66,8 +66,8 @@ class PipelineManager:
         # Get the current date and time
         now = datetime.now()
         current_date = now.strftime("%Y-%m-%d")
-        # Generate a timestamp string with current date and Unix time
-        current_timestamp = now.strftime(current_date + "%s")
+        current_timestamp = int(now.timestamp())
+        current_date_timestamp = f"{current_date}.{current_timestamp}"
 
         # Tag logic for STABLE environment
         if self.environment == Environment.STABLE:
@@ -76,13 +76,11 @@ class PipelineManager:
             print("Tags created for STABLE: ", self.tags)
         # Tag logic for LATEST environment
         elif self.environment == Environment.LATEST:
-            # Create a tag with version, commit hash, and timestamp, along with 'latest'
-            self.tags = [f"{self.version}-{self.commit_hash}.{current_timestamp}", Environment.LATEST.value]
+            self.tags = [f"{self.version}-{self.commit_hash}.{current_date_timestamp}", Environment.LATEST.value]
             print("Tags created for LATEST: ", self.tags)
         # Tag logic for REVIEW environment
         elif self.environment == Environment.REVIEW:
-            # Create a review tag that includes branch name and commit hash
-            self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"]
+            self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_date_timestamp}"]
             print("Tag created for REVIEW: ", self.tags)
         else:
             # Handle unknown environments (no tags created)
