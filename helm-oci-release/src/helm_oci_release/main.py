@@ -99,7 +99,8 @@ class HelmOciRelease:
         """
         Lists contents for debugging.
         """
-        return await container.with_exec(["ls", "-la"])
+        
+        return await container.with_exec(["pwd"]).with_exec(["ls", "-la"])
 
     async def helm_push(self, container: Container, app_version: str, repo_url: str) -> Container:
         """
