@@ -181,25 +181,6 @@ class PipelineManager:
         )
 
 
-    async def _package_and_push_helm_chart(self, helm_container):
-        """
-        Package the Helm chart and push it to GHCR as an OCI artifact.
-        """
-        # Package the chart
-        helm_container = (
-            helm_container
-            .with_exec(["helm", "package", "."])
-        )
-        # Add the GITHUB_TOKEN secret as an environment variable
-        helm_container = helm_container.with_secret_variable("GITHUB_TOKEN", self.github_token)
-        # Push the chart to GHCR (OCI)
-        oci_url = f"oci://ghcr.io/{self.ghcr_owner}/oci"
-        helm_container = (
-            helm_container
-            .with_exec(["helm", "registry", "login", "ghcr.io", "-u", self.username, "--password", "$GITHUB_TOKEN"])
-            .with_exec(["helm", "push", f"{self.app_name}-{self.version}.tgz", oci_url])
-        )
-        await helm_container.stdout()
 
     @function
     async def _update_chart_files(self) -> None:
@@ -224,7 +205,7 @@ class PipelineManager:
         await helm_container.stdout()
 
         # Package and push Helm chart to GHCR
-        await self._package_and_push_helm_chart(helm_container)
+        # await self._package_and_push_helm_chart(helm_container)
 
     @function
     async def run(self,
@@ -275,14 +256,15 @@ class PipelineManager:
 
         # Publish the Docker image
         await self._publish_docker_image()
+        
+        # Update Helm chart files only if running in STABLE environment
+        if self.environment == Environment.STABLE:
+            self.helm_repo_pat = helm_repo_pat
+            self.helm_repo_url = f"{self.repository_url}-helm"
+            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
+            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
+            await self._update_chart_files()
+        else:
+            print(f"Not updating Helm chart files for this environment: {self.environment}")
+            
         print("Pipeline completed successfully")
-
-        # Update Helm chart files if running in stable or latest environment. The only difference is that latest use latest_values.yaml.
-        # if self.environment in [Environment.STABLE, Environment.LATEST]:
-        self.helm_repo_pat = helm_repo_pat
-        self.helm_repo_url = f"{self.repository_url}-helm"
-        self.ghcr_owner = self.helm_repo_url.split("/")[-2]
-        self.helm_repo_name = self.helm_repo_url.split("/")[-1]
-        await self._update_chart_files()
-        # else:
-            # print("Not updating Helm chart files for this environment")
