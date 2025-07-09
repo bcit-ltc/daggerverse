@@ -147,7 +147,9 @@ class PipelineManager:
     def _create_helm_container(self):
         """
         Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
+        Uses Dagger's git module for cloning.
         """
+        repo_dir = dag.git(self.helm_repo_url).ref(self.branch).tree()
         return (
             dag.container()
             .from_("alpine/helm:3.18.3")
@@ -155,8 +157,8 @@ class PipelineManager:
             .with_secret_variable("GITHUB_TOKEN", self.helm_repo_pat)
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
+            .with_directory("/repo", repo_dir)
             .with_workdir("/repo")
-            .with_exec(["git", "clone", "--branch", self.branch, self.helm_repo_url, "."])
         )
 
 
