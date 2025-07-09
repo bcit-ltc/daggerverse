@@ -149,7 +149,7 @@ class PipelineManager:
         Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
         Uses Dagger's git module for cloning.
         """
-        repo_dir = dag.git(self.helm_repo_url).ref(self.branch).tree()
+        repo_dir = dag.git(self.helm_repo_url).ref("main").tree()
         return (
             dag.container()
             .from_("alpine/helm:3.18.3")
