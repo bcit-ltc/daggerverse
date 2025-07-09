@@ -71,7 +71,7 @@ class HelmOciRelease:
         temp_path = workdir / helm_directory_path
         final_path = str(temp_path)
         print(f"[DEBUG] Setting Helm workdir to: {final_path}")
-        return await container.with_workdir(final_path)
+        return await container.with_workdir(self.appname)
 
     async def add_ghcr_password_secret(self, container: Container, github_token: Secret) -> Container:
         """
@@ -99,7 +99,6 @@ class HelmOciRelease:
         """
         Lists contents for debugging.
         """
-        
         return await container.with_exec(["pwd"]).with_exec(["ls", "-la"])
 
     async def helm_push(self, container: Container, app_version: str, repo_url: str) -> Container:
