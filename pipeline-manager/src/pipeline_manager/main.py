@@ -1,4 +1,4 @@
-from dagger import dag, function, object_type, DefaultPath, Directory, Secret, Doc, Enum, enum_type
+from dagger import dag, function, object_type, DefaultPath, Directory, Secret, Doc, Enum, enum_type, Container, QueryError
 from typing import Annotated
 import json
 from datetime import datetime
@@ -24,6 +24,7 @@ class PipelineManager:
     version = None
     tags = None
     docker_container = None
+    helm_container = None
 
     async def _check_if_ci(self) -> None:
         """
@@ -170,11 +171,74 @@ class PipelineManager:
             print("Not running semantic release for this environment")
             self.semantic_release_result = None
 
+    def _create_helm_container(self):
+        """
+        Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
+        Uses Dagger's git module for cloning.
+        """
+        repo_dir = dag.git(self.helm_repo_url).ref("main").tree()
+        return (
+            dag.container()
+            .from_("alpine/helm:3.18.3")
+            .with_exec(["apk", "add", "--no-cache", "git", "yq", "curl"])
+            .with_secret_variable("GITHUB_TOKEN", self.helm_repo_pat)
+            .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
+            .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
+            .with_directory("/repo", repo_dir)
+            .with_workdir("/repo")
+        )
+
+
+    async def _commit_and_push_changes(self, helm_container):
+        """
+        Commit and push changes to the remote Helm repo.
+        """
+        return (
+            helm_container
+            .with_exec([
+                "sh", "-c",
+                f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{self.ghcr_owner}/{self.helm_repo_name}.git"'
+            ])
+            .with_exec(["git", "add", "."])
+            .with_exec([
+                "git", "commit", "-m",
+                f"Update {self.app_name} to version {self.version}"
+            ])
+            .with_exec(["git", "push", "origin", "main"])  # Push to main branch
+        )
+
+
+
+    @function
+    async def _update_chart_files(self) -> None:
+        """
+        Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
+        Then package and push the Helm chart to GHCR as OCI.
+        """
+        values_file = "values.yaml"
+
+        # Prepare container for git, yq, and helm operations
+        helm_container = self._create_helm_container()
+
+        # Update Chart.yaml and values file with new app version
+        helm_container = (
+            helm_container
+            .with_exec(["yq", "-i", f'.appVersion = "{self.version}"', "Chart.yaml"])
+            .with_exec(["yq", "-i", f'.image.tag = "{self.version}"', values_file])
+        )
+
+        # Commit and push changes
+        helm_container = await self._commit_and_push_changes(helm_container)
+        await helm_container.stdout()
+
+        # Package and push Helm chart to GHCR
+        # await self._package_and_push_helm_chart(helm_container)
 
     @function
     async def run(self,
                 source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
                 github_token: Annotated[Secret | None, Doc("Github Token")],
+                helm_repo_pat: Annotated[Secret | None, Doc("GitHub Personal Access Token for Helm repository")],
                 username: Annotated[str | None, Doc("Github Username")],  # GitHub username
                 branch: Annotated[str | None, Doc("Current Branch")],  # Current branch
                 commit_hash: Annotated[str | None, Doc("Current Commit Hash")],  # Current commit hash
@@ -195,7 +259,9 @@ class PipelineManager:
         self.branch = branch
         self.commit_hash = commit_hash
         self.registry_path = registry_path
-        self.repository_url = repository_url
+        # Ensure repository_url does not end with a slash
+        self.repository_url = repository_url.rstrip("/") if repository_url else repository_url
+        self.app_name = self.repository_url.split("/")[-1] if self.repository_url else None
 
         # Step 1: Run unit tests to ensure build correctness
         await self.unit_tests()
@@ -218,7 +284,15 @@ class PipelineManager:
 
         # Step 7: Push the Docker image to the container registry using generated tags
         await self._publish_docker_image()
-        print("Pipeline completed successfully")
-    
-
+        
+        # Update Helm chart files only if running in STABLE environment
+        if self.environment == Environment.STABLE:
+            self.helm_repo_pat = helm_repo_pat
+            self.helm_repo_url = f"{self.repository_url}-helm"
+            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
+            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
+            await self._update_chart_files()
+        else:
+            print(f"Not updating Helm chart files for this environment: {self.environment}")
             
+        print("Pipeline completed successfully")
