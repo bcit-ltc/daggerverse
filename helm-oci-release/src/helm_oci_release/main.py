@@ -16,6 +16,7 @@ class HelmOciRelease:
             username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             organization: Annotated[str, Doc("Organization Name")] = "bcit-ltc",  # Organization name
             appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
+            helm_directory_path: Annotated[str, Doc("Helm Chart Directory Path")] = "",  # Helm chart directory path
             chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
             app_version: Annotated[str, Doc("Application Version")] = "0.1.0",  # Application version
             ) -> str:
@@ -30,7 +31,7 @@ class HelmOciRelease:
         try:
             container = await self.prepare_base_container()
             container = await self.add_source_directory(container, source)
-            container = await self.set_workdir(container, f"{WORKDIR}/{appname}")
+            container = await self.set_workdir(container, f"{WORKDIR}/{helm_directory_path}")
             container = await self.add_ghcr_password_secret(container, github_token)
             container = await self.helm_login(container, organization)
             container = await self.helm_list_contents(container)
