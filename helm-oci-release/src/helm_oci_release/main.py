@@ -1,10 +1,10 @@
 import dagger
 from dagger import dag, function, object_type, DefaultPath, Directory, Doc, Secret, Container
 from typing import Annotated
+from pathlib import Path
 
 HELM_IMAGE = "alpine/helm:3.12.0"
 OCI_REGISTRY_URL = "oci://ghcr.io"
-WORKDIR = "/app"
 
 @object_type
 class HelmOciRelease:
@@ -16,7 +16,7 @@ class HelmOciRelease:
             username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             organization: Annotated[str, Doc("Organization Name")] = "bcit-ltc",  # Organization name
             appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
-            helm_directory_path: Annotated[str, Doc("Helm Chart Directory Path")] = "",  # Helm chart directory path
+            helm_directory_path: Annotated[str, Doc("Helm Chart Directory Path")] = ".",  # Helm chart directory path
             chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
             app_version: Annotated[str, Doc("Application Version")] = "0.1.0",  # Application version
             ) -> str:
@@ -31,7 +31,8 @@ class HelmOciRelease:
         try:
             container = await self.prepare_base_container()
             container = await self.add_source_directory(container, source)
-            container = await self.set_workdir(container, f"{WORKDIR}/{helm_directory_path}")
+            # container = await self.set_workdir(container, appname)
+            container = await self.set_helm_workdir(container, helm_directory_path)
             container = await self.add_ghcr_password_secret(container, github_token)
             container = await self.helm_login(container, organization)
             container = await self.helm_list_contents(container)
@@ -54,13 +55,21 @@ class HelmOciRelease:
         """
         Mounts the local source code.
         """
-        return await container.with_directory(WORKDIR, source)
+        return await container.with_directory(self.appname, source)
 
-    async def set_workdir(self, container: Container, path: str) -> Container:
+    # async def set_workdir(self, container: Container, path: str) -> Container:
+    #     """
+    #     Sets working directory.
+    #     """
+    #     return await container.with_workdir(path)
+    
+    async def set_helm_workdir(self, container: Container, helm_directory_path: str) -> Container:
+        """ Sets the Helm chart working directory.
         """
-        Sets working directory.
-        """
-        return await container.with_workdir(path)
+        workdir = Path(f"/{self.appname}")
+        helm_directory_path = Path(helm_directory_path)
+        final_path = workdir / helm_directory_path
+        return await container.with_workdir(final_path)
 
     async def add_ghcr_password_secret(self, container: Container, github_token: Secret) -> Container:
         """
