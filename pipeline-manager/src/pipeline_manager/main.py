@@ -149,7 +149,7 @@ class PipelineManager:
         Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
         Uses Dagger's git module for cloning.
         """
-        repo_dir = dag.git(self.helm_repo_url).ref("main").tree()
+        repo_dir = dag.git(self.helm_repo_url).ref(self.branch).tree()
         return (
             dag.container()
             .from_("alpine/helm:3.18.3")
@@ -205,7 +205,7 @@ class PipelineManager:
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
         Then package and push the Helm chart to GHCR as OCI.
         """
-        values_file = "values.yaml" if self.environment == Environment.STABLE else "latest_values.yaml"
+        values_file = "values.yaml"
 
         # Prepare container for git, yq, and helm operations
         helm_container = self._create_helm_container()
