@@ -3,6 +3,7 @@ from dagger import dag, function, object_type, DefaultPath, Directory, Doc, Secr
 from typing import Annotated
 
 HELM_IMAGE = "alpine/helm:3.12.0"
+OCI_REGISTRY_URL = "oci://ghcr.io"
 WORKDIR = "/app"
 
 @object_type
@@ -34,7 +35,7 @@ class HelmOciRelease:
             container = await self.helm_login(container, organization)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/{organization}/oci")
+            container = await self.helm_push(container, f"{appname}-{chart_version}", f"{OCI_REGISTRY_URL}/{organization}/oci")
 
         except Exception as e:
             print(f"[ERROR] Pipeline failed: {e}")
