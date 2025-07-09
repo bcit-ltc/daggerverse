@@ -177,7 +177,7 @@ class PipelineManager:
                 "git", "commit", "-m",
                 f"Update {self.app_name} to version {self.version}"
             ])
-            .with_exec(["git", "push", "origin", self.branch])
+            .with_exec(["git", "push", "origin", "main"])  # Push to main branch
         )
 
 
