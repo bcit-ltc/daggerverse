@@ -190,11 +190,13 @@ class PipelineManager:
             helm_container
             .with_exec(["helm", "package", "."])
         )
+        # Add the GITHUB_TOKEN secret as an environment variable
+        helm_container = helm_container.with_secret_variable("GITHUB_TOKEN", self.github_token)
         # Push the chart to GHCR (OCI)
         oci_url = f"oci://ghcr.io/{self.ghcr_owner}/oci"
         helm_container = (
             helm_container
-            .with_exec(["helm", "registry", "login", "ghcr.io", "-u", self.username, "--password-stdin"], stdin=self.github_token)
+            .with_exec(["helm", "registry", "login", "ghcr.io", "-u", self.username, "--password", "$GITHUB_TOKEN"])
             .with_exec(["helm", "push", f"{self.app_name}-{self.version}.tgz", oci_url])
         )
         await helm_container.stdout()
