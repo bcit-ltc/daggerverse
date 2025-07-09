@@ -164,13 +164,11 @@ class PipelineManager:
         """
         Commit and push changes to the remote Helm repo.
         """
-        owner = self.helm_repo_url.split("/")[-2]
-        repo = self.helm_repo_url.split("/")[-1]
         return (
             helm_container
             .with_exec([
                 "sh", "-c",
-                f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{owner}/{repo}.git"'
+                f'git remote set-url origin "https://x-access-token:$GITHUB_TOKEN@github.com/{self.ghcr_owner}/{self.helm_repo_name}.git"'
             ])
             .with_exec(["git", "add", "."])
             .with_exec([
@@ -181,10 +179,29 @@ class PipelineManager:
         )
 
 
+    async def _package_and_push_helm_chart(self, helm_container):
+        """
+        Package the Helm chart and push it to GHCR as an OCI artifact.
+        """
+        # Package the chart
+        helm_container = (
+            helm_container
+            .with_exec(["helm", "package", "."])
+        )
+        # Push the chart to GHCR (OCI)
+        oci_url = f"oci://ghcr.io/{self.ghcr_owner}/oci"
+        helm_container = (
+            helm_container
+            .with_exec(["helm", "registry", "login", "ghcr.io", "-u", self.username, "--password-stdin"], stdin=self.github_token)
+            .with_exec(["helm", "push", f"{self.app_name}-{self.version}.tgz", oci_url])
+        )
+        await helm_container.stdout()
+
     @function
     async def _update_chart_files(self) -> None:
         """
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
+        Then package and push the Helm chart to GHCR as OCI.
         """
         values_file = "values.yaml" if self.environment == Environment.STABLE else "latest_values.yaml"
 
@@ -201,6 +218,9 @@ class PipelineManager:
         # Commit and push changes
         helm_container = await self._commit_and_push_changes(helm_container)
         await helm_container.stdout()
+
+        # Package and push Helm chart to GHCR
+        await self._package_and_push_helm_chart(helm_container)
 
     @function
     async def run(self,
@@ -225,8 +245,9 @@ class PipelineManager:
         self.branch = branch
         self.commit_hash = commit_hash
         self.registry_path = registry_path
-        self.repository_url = repository_url
-        self.app_name = self.repository_url.split("/")[-1]
+        # Ensure repository_url does not end with a slash
+        self.repository_url = repository_url.rstrip("/") if repository_url else repository_url
+        self.app_name = self.repository_url.split("/")[-1] if self.repository_url else None
 
         # Run unit tests
         await self.unit_tests()
@@ -256,6 +277,8 @@ class PipelineManager:
         if self.environment in [Environment.STABLE, Environment.LATEST]:
             self.helm_repo_pat = helm_repo_pat
             self.helm_repo_url = f"{self.repository_url}-helm"
+            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
+            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
             await self._update_chart_files()
         else:
             print("Not updating Helm chart files for this environment")
