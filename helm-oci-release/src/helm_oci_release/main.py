@@ -32,7 +32,6 @@ class HelmOciRelease:
             container = await self.set_workdir(container, f"{WORKDIR}/{appname}")
             container = await self.add_ghcr_password_secret(container, github_token)
             container = await self.helm_login(container, organization)
-            container = await self.update_chart_name(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
             container = await self.helm_push(container, f"{appname}-{chart_version}", f"oci://ghcr.io/{organization}/oci")
@@ -75,17 +74,6 @@ class HelmOciRelease:
             f'--username {username} --password-stdin'
         )
         return await container.with_exec(["sh", "-c", login_cmd])
-
-    async def update_chart_name(self, container: Container) -> Container:
-        """
-        Updates the Chart.yaml file.
-        """
-        # Use built-in shell commands available in Alpine (sh, echo, cat, etc.)
-        # Use 'sh' to update Chart.yaml without sed
-        return await container.with_exec([
-            "sh", "-c",
-            f"echo 'name: {self.appname}' > Chart.yaml.tmp && grep -v '^name:' Chart.yaml >> Chart.yaml.tmp && mv Chart.yaml.tmp Chart.yaml && cat Chart.yaml"
-        ])
 
     async def helm_package(self, container: Container) -> Container:
         """
