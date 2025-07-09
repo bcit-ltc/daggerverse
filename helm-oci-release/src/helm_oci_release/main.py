@@ -33,6 +33,7 @@ class HelmOciRelease:
             container = await self.set_workdir(container, f"{WORKDIR}/{appname}")
             container = await self.add_ghcr_password_secret(container, github_token)
             container = await self.helm_login(container, organization)
+            container = await self.helm_list_contents(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
             container = await self.helm_push(container, f"{appname}-{chart_version}", f"{OCI_REGISTRY_URL}/{organization}/oci")
