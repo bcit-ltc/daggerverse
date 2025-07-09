@@ -57,16 +57,18 @@ class PipelineManager:
         # Get the current date and time
         now = datetime.now()
         current_date = now.strftime("%Y-%m-%d")
-        current_timestamp = now.strftime(current_date + "%s")
+        current_timestamp = int(now.timestamp())
+
+        current_date_timestamp = f"{current_date}.{current_timestamp}"
 
         if self.environment == Environment.STABLE:
             self.tags = [self.version, Environment.STABLE.value, Environment.LATEST.value]
             print("Tags created for STABLE: ", self.tags)
         elif self.environment == Environment.LATEST:
-            self.tags = [f"{self.version}-{self.commit_hash}.{current_timestamp}", Environment.LATEST.value]
+            self.tags = [f"{self.version}-{self.commit_hash}.{current_date_timestamp}", Environment.LATEST.value]
             print("Tags created for LATEST: ", self.tags)
         elif self.environment == Environment.REVIEW:
-            self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_timestamp}"]
+            self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_date_timestamp}"]
             print("Tag created for REVIEW: ", self.tags)
         else:
             # self.tags = [] # for debugging purposes
