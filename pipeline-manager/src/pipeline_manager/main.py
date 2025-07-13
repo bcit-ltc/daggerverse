@@ -213,6 +213,16 @@ class PipelineManager:
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
         Then package and push the Helm chart to GHCR as OCI.
         """
+        # Update Helm chart files only if running in STABLE environment
+        if self.environment == Environment.STABLE:
+            self.helm_repo_url = f"{self.repository_url}-helm"
+            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
+            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
+            # await self._update_chart_files()
+        else:
+            print(f"Not updating Helm chart files for this environment: {self.environment}")
+            return
+
         values_file = "values.yaml"
 
         # Prepare container for git, yq, and helm operations
@@ -231,6 +241,13 @@ class PipelineManager:
 
         # Package and push Helm chart to GHCR
         # await self._package_and_push_helm_chart(helm_container)
+
+    @function
+    async def _push_helm_oci_release(self) -> None:
+        """
+        Push the Helm chart as an OCI artifact to the container registry.
+        """
+        pass
 
     @function
     async def run(self,
@@ -253,6 +270,7 @@ class PipelineManager:
         # Store all function parameters as instance variables for use in downstream methods
         self.source = source
         self.github_token = github_token
+        self.helm_repo_pat = helm_repo_pat
         self.username = username
         self.branch = branch
         self.commit_hash = commit_hash
@@ -283,14 +301,10 @@ class PipelineManager:
         # Step 7: Push the Docker image to the container registry using generated tags
         await self._publish_docker_image()
         
-        # Update Helm chart files only if running in STABLE environment
-        if self.environment == Environment.STABLE:
-            self.helm_repo_pat = helm_repo_pat
-            self.helm_repo_url = f"{self.repository_url}-helm"
-            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
-            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
-            await self._update_chart_files()
-        else:
-            print(f"Not updating Helm chart files for this environment: {self.environment}")
-            
+        # Step 8: If running in STABLE environment, update Helm chart files
+        await self._update_chart_files()
+
+        # Step 9: If running in STABLE environment, push Helm chart as OCI artifact
+        await self._push_helm_oci_release()
+
         print("Pipeline completed successfully")
