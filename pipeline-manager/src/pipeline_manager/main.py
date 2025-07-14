@@ -87,6 +87,8 @@ class PipelineManager:
             # self.tags = []  # Uncomment for debugging or fallback behavior
             print("No tag created for this environment")
             
+        # Print the tags and environment for debugging
+        print(f"Tags: {self.tags}, Environment: {self.environment}")
     
     async def _build_docker_image(self) -> None:
         """
@@ -174,7 +176,7 @@ class PipelineManager:
         Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
         Uses Dagger's git module for cloning.
         """
-        repo_dir = dag.git(self.helm_repo_url).ref("main").tree()
+        self.helm_repo_source = dag.git(self.helm_repo_url).ref("main").tree()
         return (
             dag.container()
             .from_("alpine/helm:3.18.3")
@@ -182,7 +184,7 @@ class PipelineManager:
             .with_secret_variable("GITHUB_TOKEN", self.helm_repo_pat)
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
-            .with_directory("/repo", repo_dir)
+            .with_directory("/repo", self.helm_repo_source)
             .with_workdir("/repo")
         )
 
@@ -213,6 +215,16 @@ class PipelineManager:
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
         Then package and push the Helm chart to GHCR as OCI.
         """
+        # Update Helm chart files only if running in STABLE environment
+        if self.environment == Environment.STABLE:
+            self.helm_repo_url = f"{self.repository_url}-helm"
+            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
+            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
+            # await self._update_chart_files()
+        else:
+            print(f"Not updating Helm chart files for this environment: {self.environment}")
+            return
+
         values_file = "values.yaml"
 
         # Prepare container for git, yq, and helm operations
@@ -227,10 +239,28 @@ class PipelineManager:
 
         # Commit and push changes
         helm_container = await self._commit_and_push_changes(helm_container)
-        await helm_container.stdout()
+        return await helm_container.directory("/repo")
+    
+        return 
 
         # Package and push Helm chart to GHCR
         # await self._package_and_push_helm_chart(helm_container)
+
+    @function
+    async def _push_helm_oci_release(self) -> None:
+        """
+        Push the Helm chart as an OCI artifact to the container registry.
+        """
+        await dag.helm_oci_release().run(
+                source=self.helm_repo_source,
+                github_token=self.github_token,
+                username=self.username,
+                organization="bcit-ltc",
+                app_name=self.app_name,
+                helm_directory_path="./",
+                chart_version=self.version,  # Chart version
+                app_version=self.version,  # Application version
+            )
 
     @function
     async def run(self,
@@ -242,6 +272,7 @@ class PipelineManager:
                 commit_hash: Annotated[str | None, Doc("Current Commit Hash")],  # Current commit hash
                 registry_path: Annotated[str | None, Doc("Docker Registry Path")],  # Docker registry path
                 repository_url: Annotated[str | None, Doc("Repository URL")],  # Repository URL
+                app_name: Annotated[str | None, Doc("Application Name")],  # Application name
                   ) -> None:
         """
         Main pipeline entry point.
@@ -252,14 +283,16 @@ class PipelineManager:
 
         # Store all function parameters as instance variables for use in downstream methods
         self.source = source
+        self.helm_repo_source = None # will be set in _create_helm_container
         self.github_token = github_token
+        self.helm_repo_pat = helm_repo_pat
         self.username = username
         self.branch = branch
         self.commit_hash = commit_hash
         self.registry_path = registry_path
         # Ensure repository_url does not end with a slash
         self.repository_url = repository_url.rstrip("/") if repository_url else repository_url
-        self.app_name = self.repository_url.split("/")[-1] if self.repository_url else None
+        self.app_name = app_name
 
         # Step 1: Run unit tests to ensure build correctness
         await self.unit_tests()
@@ -278,19 +311,14 @@ class PipelineManager:
     
         # Step 6: Create image tags based on environment, version, branch, and commit hash
         await self._create_tag()
-        print(f"Tags: {self.tags}, Environment: {self.environment}")
 
         # Step 7: Push the Docker image to the container registry using generated tags
         await self._publish_docker_image()
         
-        # Update Helm chart files only if running in STABLE environment
-        if self.environment == Environment.STABLE:
-            self.helm_repo_pat = helm_repo_pat
-            self.helm_repo_url = f"{self.repository_url}-helm"
-            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
-            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
-            await self._update_chart_files()
-        else:
-            print(f"Not updating Helm chart files for this environment: {self.environment}")
-            
+        # Step 8: If running in STABLE environment, update Helm chart files
+        await self._update_chart_files()
+
+        # Step 9: If running in STABLE environment, push Helm chart as OCI artifact
+        await self._push_helm_oci_release()
+
         print("Pipeline completed successfully")
