@@ -256,7 +256,7 @@ class PipelineManager:
                 organization="bcit-ltc",
                 app_name=self.app_name,
                 helm_directory_path="./",
-                chart_version="0.1.0",  # Chart version
+                chart_version=self.version,  # Chart version
                 app_version=self.version,  # Application version
             )
 
