@@ -8,7 +8,7 @@
     {
       "name": "helm-oci-release",
       "source": "github.com/bcit-ltc/daggerverse/helm-oci-release",
-      "pin": "6593a14fac4d0d4312550bdad5b8e9d1820a6bcc"
+      "pin": "009cb993ad542852995276eb1f94c9c01747fbbd"
     },
     {
       "name": "semantic-release",
