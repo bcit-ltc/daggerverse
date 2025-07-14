@@ -247,7 +247,16 @@ class PipelineManager:
         """
         Push the Helm chart as an OCI artifact to the container registry.
         """
-        pass
+        await dag.helm_oci_release().run(
+                source=self.source,
+                github_token=self.github_token,
+                username=self.username,
+                organization="bcit-ltc",
+                app_name=self.app_name,
+                helm_directory_path="./"+self.app_name,  # Helm chart directory path
+                chart_version="0.1.0",  # Chart version
+                app_version=self.version,  # Application version
+            )
 
     @function
     async def run(self,
@@ -259,6 +268,7 @@ class PipelineManager:
                 commit_hash: Annotated[str | None, Doc("Current Commit Hash")],  # Current commit hash
                 registry_path: Annotated[str | None, Doc("Docker Registry Path")],  # Docker registry path
                 repository_url: Annotated[str | None, Doc("Repository URL")],  # Repository URL
+                app_name: Annotated[str | None, Doc("Application Name")],  # Application name
                   ) -> None:
         """
         Main pipeline entry point.
@@ -277,7 +287,7 @@ class PipelineManager:
         self.registry_path = registry_path
         # Ensure repository_url does not end with a slash
         self.repository_url = repository_url.rstrip("/") if repository_url else repository_url
-        self.app_name = self.repository_url.split("/")[-1] if self.repository_url else None
+        self.app_name = app_name
 
         # Step 1: Run unit tests to ensure build correctness
         await self.unit_tests()

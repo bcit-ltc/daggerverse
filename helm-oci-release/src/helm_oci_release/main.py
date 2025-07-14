@@ -15,7 +15,7 @@ class HelmOciRelease:
             github_token: Annotated[Secret, Doc("Github Token")],
             username: Annotated[str, Doc("Github Username")] = "local",  # GitHub username
             organization: Annotated[str, Doc("Organization Name")] = "bcit-ltc",  # Organization name
-            appname: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
+            app_name: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
             helm_directory_path: Annotated[str, Doc("Helm Chart Directory Path")] = ".",  # Helm chart directory path
             chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
             app_version: Annotated[str, Doc("Application Version")] = "0.1.0",  # Application version
@@ -24,21 +24,21 @@ class HelmOciRelease:
         self.github_token = github_token
         self.username = username
         self.organization = organization
-        self.appname = appname
+        self.app_name = app_name
         self.chart_version = chart_version
         self.app_version = app_version
 
         try:
             container = await self.prepare_base_container()
             container = await self.add_source_directory(container, source)
-            # container = await self.set_workdir(container, appname)
+            # container = await self.set_workdir(container, app_name)
             container = await self.set_helm_workdir(container, helm_directory_path)
             container = await self.add_ghcr_password_secret(container, github_token)
             container = await self.helm_login(container, organization)
             container = await self.helm_list_contents(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{appname}-{chart_version}", f"{OCI_REGISTRY_URL}/{organization}/oci")
+            container = await self.helm_push(container, f"{app_name}-{chart_version}", f"{OCI_REGISTRY_URL}/{organization}/oci")
 
         except Exception as e:
             print(f"[ERROR] Pipeline failed: {e}")
@@ -55,7 +55,7 @@ class HelmOciRelease:
         """
         Mounts the local source code.
         """
-        return await container.with_directory(self.appname, source)
+        return await container.with_directory(self.app_name, source)
 
     # async def set_workdir(self, container: Container, path: str) -> Container:
     #     """
@@ -67,7 +67,7 @@ class HelmOciRelease:
         """ Sets the Helm chart working directory.
         """
         defaultpath = Path("/apps")
-        workdir = Path(f"./{self.appname}")
+        workdir = Path(f"./{self.app_name}")
         helm_directory_path = Path(helm_directory_path)
         temp_path = defaultpath /workdir / helm_directory_path
         final_path = str(temp_path)
