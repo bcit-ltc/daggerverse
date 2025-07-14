@@ -87,6 +87,8 @@ class PipelineManager:
             # self.tags = []  # Uncomment for debugging or fallback behavior
             print("No tag created for this environment")
             
+        # Print the tags and environment for debugging
+        print(f"Tags: {self.tags}, Environment: {self.environment}")
     
     async def _build_docker_image(self) -> None:
         """
@@ -309,7 +311,6 @@ class PipelineManager:
     
         # Step 6: Create image tags based on environment, version, branch, and commit hash
         await self._create_tag()
-        print(f"Tags: {self.tags}, Environment: {self.environment}")
 
         # Step 7: Push the Docker image to the container registry using generated tags
         await self._publish_docker_image()
