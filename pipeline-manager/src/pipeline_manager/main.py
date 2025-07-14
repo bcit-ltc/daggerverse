@@ -174,7 +174,7 @@ class PipelineManager:
         Create and return a Dagger container with git, yq, and helm tools, configured for the repo.
         Uses Dagger's git module for cloning.
         """
-        repo_dir = dag.git(self.helm_repo_url).ref("main").tree()
+        self.helm_repo_source = dag.git(self.helm_repo_url).ref("main").tree()
         return (
             dag.container()
             .from_("alpine/helm:3.18.3")
@@ -182,7 +182,7 @@ class PipelineManager:
             .with_secret_variable("GITHUB_TOKEN", self.helm_repo_pat)
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
-            .with_directory("/repo", repo_dir)
+            .with_directory("/repo", self.helm_repo_source)
             .with_workdir("/repo")
         )
 
@@ -237,7 +237,9 @@ class PipelineManager:
 
         # Commit and push changes
         helm_container = await self._commit_and_push_changes(helm_container)
-        await helm_container.stdout()
+        return await helm_container.directory("/repo")
+    
+        return 
 
         # Package and push Helm chart to GHCR
         # await self._package_and_push_helm_chart(helm_container)
@@ -248,7 +250,7 @@ class PipelineManager:
         Push the Helm chart as an OCI artifact to the container registry.
         """
         await dag.helm_oci_release().run(
-                source=self.source,
+                source=self.helm_repo_source,
                 github_token=self.github_token,
                 username=self.username,
                 organization="bcit-ltc",
@@ -279,6 +281,7 @@ class PipelineManager:
 
         # Store all function parameters as instance variables for use in downstream methods
         self.source = source
+        self.helm_repo_source = None # will be set in _create_helm_container
         self.github_token = github_token
         self.helm_repo_pat = helm_repo_pat
         self.username = username
