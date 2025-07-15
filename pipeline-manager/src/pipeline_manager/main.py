@@ -218,9 +218,9 @@ class PipelineManager:
         """
         # Update Helm chart files only if running in STABLE environment
         if self.environment == Environment.STABLE:
-            self.helm_repo_url = f"{self.repository_url}-helm"
-            self.ghcr_owner = self.helm_repo_url.split("/")[-2]
-            self.helm_repo_name = self.helm_repo_url.split("/")[-1]
+            self.helm_repo_url = "https://github.com/bcit-ltc/helm-charts"
+            self.ghcr_owner = "bcit-ltc"
+            self.helm_repo_name = "helm-charts"
             # await self._update_chart_files()
         else:
             print(f"Not updating Helm chart files for this environment: {self.environment}")
