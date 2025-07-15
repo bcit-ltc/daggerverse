@@ -185,6 +185,7 @@ class PipelineManager:
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_directory("/repo", self.helm_repo_source)
+            .with_workdir(f"/repo/charts/{self.app_name}")
             .with_workdir("/repo")
         )
 
