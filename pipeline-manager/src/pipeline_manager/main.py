@@ -215,36 +215,52 @@ class PipelineManager:
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
         Then package and push the Helm chart to GHCR as OCI.
         """
-        # Update Helm chart files only if running in STABLE environment
-        if self.environment == Environment.STABLE:
-            self.helm_repo_url = "https://github.com/bcit-ltc/helm-charts"
-            self.ghcr_owner = "bcit-ltc"
-            self.helm_repo_name = "helm-charts"
-            # await self._update_chart_files()
-        else:
-            print(f"Not updating Helm chart files for this environment: {self.environment}")
-            return
 
-        values_file = "values.yaml"
-
-        # Prepare container for git, yq, and helm operations
+        # Always update appVersion and image.tag
         helm_container = self._create_helm_container()
-
-        # Update Chart.yaml and values file with new app version
         helm_container = (
             helm_container
             .with_exec(["yq", "-i", f'.appVersion = "{self.version}"', "Chart.yaml"])
-            .with_exec(["yq", "-i", f'.image.tag = "{self.version}"', values_file])
+            .with_exec(["yq", "-i", f'.image.tag = "{self.version}"', "values.yaml"])
         )
 
-        # Commit and push changes
-        helm_container = await self._commit_and_push_changes(helm_container)
-        return await helm_container.directory("/repo")
-    
-        return 
+        # If running in LATEST environment, prefix values for a list of keys with 'latest-'
+        if self.environment == Environment.LATEST:
+            latest_keys = ["ingress"]  # Add more keys as needed for LATEST
+            for key in latest_keys:
+                helm_container = helm_container.with_exec([
+                    "sh", "-c",
+                    f'yq -i ".{key} = \"latest-$(yq ".{key}" values.yaml)\"" values.yaml'
+                ])
+                print(f"Updated {key}: latest-$(yq '.{key}' values.yaml)")
+            return
 
-        # Package and push Helm chart to GHCR
-        # await self._package_and_push_helm_chart(helm_container)
+        # If running in REVIEW environment, prefix values for a list of keys with 'review-branch-<number>-'
+        elif self.environment == Environment.REVIEW:
+            import re
+            match = re.match(r"(\d+)-", self.branch)
+            if match:
+                branch_num = match.group(1)
+                review_prefix = f"review-branch-{branch_num}-"
+            else:
+                review_prefix = f"review-{self.branch}-"
+            review_keys = ["ingress"]  # Add more keys as needed for REVIEW
+            for key in review_keys:
+                helm_container = helm_container.with_exec([
+                    "sh", "-c",
+                    f'yq -i ".{key} = \"{review_prefix}$(yq ".{key}" values.yaml)\"" values.yaml'
+                ])
+                print(f"Updated {key}: {review_prefix}$(yq '.{key}' values.yaml)")
+            return
+
+        # If running in STABLE environment, commit and push changes
+        elif self.environment == Environment.STABLE:
+            helm_container = await self._commit_and_push_changes(helm_container)
+            return await helm_container.directory("/repo")
+
+        else:
+            print(f"Not updating Helm chart files for this environment: {self.environment}")
+            return
 
     @function
     async def _push_helm_oci_release(self) -> None:
@@ -255,7 +271,7 @@ class PipelineManager:
                 source=self.helm_repo_source,
                 github_token=self.github_token,
                 username=self.username,
-                organization="bcit-ltc",
+                organization=self.ghcr_owner,
                 app_name=self.app_name,
                 helm_directory_path=f"charts/{self.app_name}",  # Path to the Helm chart directory
                 chart_version=self.version,  # Chart version
@@ -293,6 +309,9 @@ class PipelineManager:
         # Ensure repository_url does not end with a slash
         self.repository_url = repository_url.rstrip("/") if repository_url else repository_url
         self.app_name = app_name
+        self.helm_repo_url = "https://github.com/bcit-ltc/helm-charts"
+        self.ghcr_owner = "bcit-ltc"
+        self.helm_repo_name = "helm-charts"
 
         # Step 1: Run unit tests to ensure build correctness
         await self.unit_tests()
