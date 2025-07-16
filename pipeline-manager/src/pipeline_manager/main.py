@@ -81,6 +81,7 @@ class PipelineManager:
         # Tag logic for REVIEW environment
         elif self.environment == Environment.REVIEW:
             self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_date_timestamp}"]
+            self.version = f"review-{self.app_version}-{self.commit_hash[:7]}-{current_date_timestamp}"
             print("Tag created for REVIEW: ", self.tags)
         else:
             # Handle unknown environments (no tags created)
