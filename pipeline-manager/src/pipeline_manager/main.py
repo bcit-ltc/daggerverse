@@ -226,7 +226,7 @@ class PipelineManager:
 
         # If running in LATEST environment, prefix values for a list of keys with 'latest-'
         if self.environment == Environment.LATEST:
-            latest_keys = ["ingress"]  # Add more keys as needed for LATEST
+            latest_keys = ["ingress.host"]  # Add more keys as needed for LATEST
             for key in latest_keys:
                 helm_container = helm_container.with_exec([
                     "sh", "-c",
@@ -244,7 +244,7 @@ class PipelineManager:
                 review_prefix = f"review-branch-{branch_num}-"
             else:
                 review_prefix = f"review-{self.branch}-"
-            review_keys = ["ingress"]  # Add more keys as needed for REVIEW
+            review_keys = ["ingress.host"]  # Add more keys as needed for REVIEW
             for key in review_keys:
                 helm_container = helm_container.with_exec([
                     "sh", "-c",
