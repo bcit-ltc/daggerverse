@@ -228,11 +228,10 @@ class PipelineManager:
         if self.environment == Environment.LATEST:
             latest_keys = ["ingress.host"]  # Add more keys as needed for LATEST
             for key in latest_keys:
+                # Use yq's string concatenation to prefix value
                 helm_container = helm_container.with_exec([
-                    "sh", "-c",
-                    f'yq -i ".{key} = \"latest-$(yq ".{key}" values.yaml)\"" values.yaml'
+                    "yq", "-i", f'.{key} |= "latest-" + .', "values.yaml"
                 ])
-                # Get the updated value from the container
                 result = await helm_container.with_exec(["yq", f".{key}", "values.yaml"]).stdout()
                 print(f"Updated {key}: {result.strip()}")
             return
@@ -248,11 +247,10 @@ class PipelineManager:
                 review_prefix = f"review-{self.branch}-"
             review_keys = ["ingress.host"]  # Add more keys as needed for REVIEW
             for key in review_keys:
+                # Use yq's string concatenation to prefix value
                 helm_container = helm_container.with_exec([
-                    "sh", "-c",
-                    f'yq -i ".{key} = \"{review_prefix}$(yq ".{key}" values.yaml)\"" values.yaml'
+                    "yq", "-i", f'.{key} |= "{review_prefix}" + .', "values.yaml"
                 ])
-                # Get the updated value from the container
                 result = await helm_container.with_exec(["yq", f".{key}", "values.yaml"]).stdout()
                 print(f"Updated {key}: {result.strip()}")
             return
