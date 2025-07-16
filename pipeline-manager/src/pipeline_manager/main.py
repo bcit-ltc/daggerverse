@@ -226,7 +226,7 @@ class PipelineManager:
             if match:
                 issue_num = match.group(1)
                 review_prefix = f"issue-{issue_num}-"
-                version_suffix = f"review-issue-{issue_num}"
+                version_suffix = f"issue-{issue_num}"
             else:
                 review_prefix = f"review-{self.branch}-"
                 version_suffix = f"review-{self.branch}"
