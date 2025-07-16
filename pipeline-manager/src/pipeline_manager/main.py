@@ -218,10 +218,10 @@ class PipelineManager:
 
         # Always update appVersion and image.tag
         helm_container = self._create_helm_container()
-        if self.environment == Environment.REVIEW:
-            # get the current value of version in Chart.yaml
-            current_version = self.tags[0]
-        print(f"Current version in Chart.yaml: {current_version.strip()}")
+        if self.environment == Environment.REVIEW:            
+            self.version = self.tags[0]
+            print(f"Setting version for REVIEW: {self.version}")
+            
 
         helm_container = (
             helm_container
