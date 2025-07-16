@@ -17,7 +17,7 @@ class HelmOciRelease:
             organization: Annotated[str, Doc("Organization Name")] = "bcit-ltc",  # Organization name
             app_name: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
             helm_directory_path: Annotated[str, Doc("Helm Chart Directory Path")] = ".",  # Helm chart directory path
-            chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
+            # chart_version: Annotated[str, Doc("Chart Version")] = "0.1.0",  # Chart version
             app_version: Annotated[str, Doc("Application Version")] = "0.1.0",  # Application version
             ) -> str:
 
@@ -25,7 +25,7 @@ class HelmOciRelease:
         self.username = username
         self.organization = organization
         self.app_name = app_name
-        self.chart_version = chart_version
+        # self.chart_version = chart_version
         self.app_version = app_version
 
         try:
@@ -33,12 +33,12 @@ class HelmOciRelease:
             container = await self.add_source_directory(container, source)
             # container = await self.set_workdir(container, app_name)
             container = await self.set_helm_workdir(container, helm_directory_path)
-            container = await self.add_ghcr_password_secret(container, github_token)
-            container = await self.helm_login(container, organization)
+            container = await self.add_ghcr_password_secret(container, self.github_token)
+            container = await self.helm_login(container, self.organization)
             container = await self.helm_list_contents(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{app_name}-{chart_version}", f"{OCI_REGISTRY_URL}/{organization}/oci")
+            container = await self.helm_push(container, f"{self.app_name}-{self.app_version}", f"{OCI_REGISTRY_URL}/{self.organization}/oci")
 
         except Exception as e:
             print(f"[ERROR] Pipeline failed: {e}")
@@ -94,7 +94,7 @@ class HelmOciRelease:
         """
         Packages the Helm chart.
         """
-        return await container.with_exec(["helm", "package", ".", "--version", self.chart_version, "--app-version", self.app_version])
+        return await container.with_exec(["helm", "package", ".", "--version", self.app_version, "--app-version", self.app_version])
 
     async def helm_list_contents(self, container: Container) -> Container:
         """
