@@ -2,6 +2,7 @@ from dagger import dag, function, object_type, DefaultPath, Directory, Secret, D
 from typing import Annotated
 import json
 from datetime import datetime
+import re
 
 # Constants
 MAIN_BRANCH = "main"
@@ -221,6 +222,12 @@ class PipelineManager:
         if self.environment == Environment.REVIEW:            
             # get the current value of version in Chart.yaml
             current_version = await helm_container.with_exec(["yq", ".version", "Chart.yaml"]).stdout()
+            # Extract the branch number from the branch name
+            self.branch_num = None
+            # If the branch name starts with a number, extract it
+            match = re.match(r"(\d+)-", self.branch)
+            if match:
+                self.branch_num = match.group(1)
             self.version = f"{current_version.strip()}-review-{self.branch_num}-{self.commit_hash}.{self.current_date_timestamp}"
             print(f"Setting version for REVIEW: {self.version}")
             
@@ -246,10 +253,7 @@ class PipelineManager:
 
         # If running in REVIEW environment, prefix values for a list of keys with 'review-branch-<number>-'
         elif self.environment == Environment.REVIEW:
-            import re
-            match = re.match(r"(\d+)-", self.branch)
-            if match:
-                self.branch_num = match.group(1)
+            if self.branch_num is not None:
                 review_prefix = f"review-branch-{self.branch_num}-"
             else:
                 review_prefix = f"review-{self.branch}-"
