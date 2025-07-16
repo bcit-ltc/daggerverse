@@ -220,6 +220,7 @@ class PipelineManager:
         helm_container = self._create_helm_container()
         helm_container = (
             helm_container
+            .with_exec(["yq", "-i", f'.version = "{self.version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.appVersion = "{self.version}"', "Chart.yaml"])
             .with_exec(["yq", "-i", f'.image.tag = "{self.version}"', "values.yaml"])
         )
