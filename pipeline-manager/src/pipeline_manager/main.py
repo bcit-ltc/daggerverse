@@ -232,7 +232,9 @@ class PipelineManager:
                     "sh", "-c",
                     f'yq -i ".{key} = \"latest-$(yq ".{key}" values.yaml)\"" values.yaml'
                 ])
-                print(f"Updated {key}: latest-$(yq '.{key}' values.yaml)")
+                # Get the updated value from the container
+                result = await helm_container.with_exec(["yq", f".{key}", "values.yaml"]).stdout()
+                print(f"Updated {key}: {result.strip()}")
             return
 
         # If running in REVIEW environment, prefix values for a list of keys with 'review-branch-<number>-'
@@ -250,7 +252,9 @@ class PipelineManager:
                     "sh", "-c",
                     f'yq -i ".{key} = \"{review_prefix}$(yq ".{key}" values.yaml)\"" values.yaml'
                 ])
-                print(f"Updated {key}: {review_prefix}$(yq '.{key}' values.yaml)")
+                # Get the updated value from the container
+                result = await helm_container.with_exec(["yq", f".{key}", "values.yaml"]).stdout()
+                print(f"Updated {key}: {result.strip()}")
             return
 
         # If running in STABLE environment, commit and push changes
