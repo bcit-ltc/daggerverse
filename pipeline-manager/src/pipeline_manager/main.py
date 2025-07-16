@@ -284,7 +284,7 @@ class PipelineManager:
                 organization=self.ghcr_owner,
                 app_name=self.app_name,
                 helm_directory_path=f"charts/{self.app_name}",  # Path to the Helm chart directory
-                # chart_version=self.version,  # Chart version
+                chart_version=self.version,  # Chart version
                 app_version=self.version,  # Application version
             )
 
