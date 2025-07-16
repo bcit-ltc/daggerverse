@@ -67,7 +67,7 @@ class PipelineManager:
         now = datetime.now()
         current_date = now.strftime("%Y-%m-%d")
         current_timestamp = int(now.timestamp())
-        current_date_timestamp = f"{current_date}.{current_timestamp}"
+        self.current_date_timestamp = f"{current_date}.{current_timestamp}"
 
         # Tag logic for STABLE environment
         if self.environment == Environment.STABLE:
@@ -76,11 +76,11 @@ class PipelineManager:
             print("Tags created for STABLE: ", self.tags)
         # Tag logic for LATEST environment
         elif self.environment == Environment.LATEST:
-            self.tags = [f"{self.version}-{self.commit_hash}.{current_date_timestamp}", Environment.LATEST.value]
+            self.tags = [f"{self.version}-{self.commit_hash}.{self.current_date_timestamp}", Environment.LATEST.value]
             print("Tags created for LATEST: ", self.tags)
         # Tag logic for REVIEW environment
         elif self.environment == Environment.REVIEW:
-            self.tags = [f"review-{self.branch}-{self.commit_hash}.{current_date_timestamp}"]
+            self.tags = [f"review-{self.branch}-{self.commit_hash}.{self.current_date_timestamp}"]
             print("Tag created for REVIEW: ", self.tags)
         else:
             # Handle unknown environments (no tags created)
@@ -219,7 +219,9 @@ class PipelineManager:
         # Always update appVersion and image.tag
         helm_container = self._create_helm_container()
         if self.environment == Environment.REVIEW:            
-            self.version = self.tags[0]
+            # get the current value of version in Chart.yaml
+            current_version = helm_container.with_exec(["yq", ".version", "Chart.yaml"]).stdout()
+            self.version = f"{current_version.strip()}-review-{self.date_timestamp}"
             print(f"Setting version for REVIEW: {self.version}")
             
 
