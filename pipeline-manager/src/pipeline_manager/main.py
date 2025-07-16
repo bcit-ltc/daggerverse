@@ -237,8 +237,7 @@ class PipelineManager:
             self.version = f"{current_version}-latest-{self.commit_hash}.{self.current_date_timestamp}"
             print(f"Setting version for LATEST: {self.version}")
         elif self.environment == Environment.STABLE:
-            self.version = current_version
-            print(f"Setting version for STABLE: {self.version}")
+            print(f"STABLE version: {self.version}")
         else:
             print(f"Not updating Helm chart files for this environment: {self.environment}")
             return
