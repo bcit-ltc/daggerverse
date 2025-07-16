@@ -220,7 +220,7 @@ class PipelineManager:
         helm_container = self._create_helm_container()
         if self.environment == Environment.REVIEW:            
             # get the current value of version in Chart.yaml
-            current_version = helm_container.with_exec(["yq", ".version", "Chart.yaml"]).stdout()
+            current_version = await helm_container.with_exec(["yq", ".version", "Chart.yaml"]).stdout()
             self.version = f"{current_version.strip()}-review-{self.date_timestamp}"
             print(f"Setting version for REVIEW: {self.version}")
             
