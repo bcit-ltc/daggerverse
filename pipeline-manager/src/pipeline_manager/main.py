@@ -216,23 +216,34 @@ class PipelineManager:
         Clone the repository, update Chart.yaml and values file with new app version, commit, and push changes.
         Then package and push the Helm chart to GHCR as OCI.
         """
-
-        # Always update appVersion and image.tag
         helm_container = self._create_helm_container()
-        
+        current_version = (await helm_container.with_exec(["yq", ".version", "Chart.yaml"]).stdout()).strip()
         issue_num = None
-        if self.environment == Environment.REVIEW:            
-            # get the current value of version in Chart.yaml
-            current_version = await helm_container.with_exec(["yq", ".version", "Chart.yaml"]).stdout()
-            # Extract the branch number from the branch name
-            # If the branch name starts with a number, extract it
+
+        # Set version and prefix logic based on environment
+        if self.environment == Environment.REVIEW:
             match = re.match(r"(\d+)-", self.branch)
             if match:
                 issue_num = match.group(1)
-            self.version = f"{current_version.strip()}-review-issue-{issue_num}-{self.commit_hash}.{self.current_date_timestamp}"
+                review_prefix = f"issue-{issue_num}-"
+                version_suffix = f"review-issue-{issue_num}"
+            else:
+                review_prefix = f"review-{self.branch}-"
+                version_suffix = f"review-{self.branch}"
+            self.version = f"{current_version}-{version_suffix}-{self.commit_hash}.{self.current_date_timestamp}"
             print(f"Setting version for REVIEW: {self.version}")
-            
+        elif self.environment == Environment.LATEST:
+            review_prefix = "latest-"
+            self.version = f"{current_version}-latest-{self.commit_hash}.{self.current_date_timestamp}"
+            print(f"Setting version for LATEST: {self.version}")
+        elif self.environment == Environment.STABLE:
+            self.version = current_version
+            print(f"Setting version for STABLE: {self.version}")
+        else:
+            print(f"Not updating Helm chart files for this environment: {self.environment}")
+            return
 
+        # Update Chart.yaml and values.yaml with the new version
         helm_container = (
             helm_container
             .with_exec(["yq", "-i", f'.version = "{self.version}"', "Chart.yaml"])
@@ -240,27 +251,10 @@ class PipelineManager:
             .with_exec(["yq", "-i", f'.image.tag = "{self.version}"', "values.yaml"])
         )
 
-        # If running in LATEST environment, prefix values for a list of keys with 'latest-'
-        if self.environment == Environment.LATEST:
-            latest_keys = ["ingress.host"]  # Add more keys as needed for LATEST
-            for key in latest_keys:
-                # Use yq's string concatenation to prefix value
-                helm_container = helm_container.with_exec([
-                    "yq", "-i", f'.{key} |= "latest-" + .', "values.yaml"
-                ])
-                result = await helm_container.with_exec(["yq", f".{key}", "values.yaml"]).stdout()
-                print(f"Updated {key}: {result.strip()}")
-            return
-
-        # If running in REVIEW environment, prefix values for a list of keys with 'review-branch-<number>-'
-        elif self.environment == Environment.REVIEW:
-            if issue_num is not None:
-                review_prefix = f"review-issue-{issue_num}-"
-            else:
-                review_prefix = f"review-{self.branch}-"
-            review_keys = ["ingress.host"]  # Add more keys as needed for REVIEW
-            for key in review_keys:
-                # Use yq's string concatenation to prefix value
+        # Prefix values for LATEST and REVIEW environments
+        if self.environment in [Environment.LATEST, Environment.REVIEW]:
+            keys = ["ingress.host"]
+            for key in keys:
                 helm_container = helm_container.with_exec([
                     "yq", "-i", f'.{key} |= "{review_prefix}" + .', "values.yaml"
                 ])
@@ -268,15 +262,10 @@ class PipelineManager:
                 print(f"Updated {key}: {result.strip()}")
             return
 
-        # If running in STABLE environment, commit and push changes
-        elif self.environment == Environment.STABLE:
+        # Commit and push for STABLE
+        if self.environment == Environment.STABLE:
             helm_container = await self._commit_and_push_changes(helm_container)
             return await helm_container.directory("/repo")
-
-        else:
-            print(f"Not updating Helm chart files for this environment: {self.environment}")
-            return
-
     @function
     async def _push_helm_oci_release(self) -> None:
         """
