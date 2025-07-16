@@ -33,12 +33,12 @@ class HelmOciRelease:
             container = await self.add_source_directory(container, source)
             # container = await self.set_workdir(container, app_name)
             container = await self.set_helm_workdir(container, helm_directory_path)
-            container = await self.add_ghcr_password_secret(container, github_token)
-            container = await self.helm_login(container, organization)
+            container = await self.add_ghcr_password_secret(container, self.github_token)
+            container = await self.helm_login(container, self.organization)
             container = await self.helm_list_contents(container)
             container = await self.helm_package(container)
             container = await self.helm_list_contents(container)
-            container = await self.helm_push(container, f"{app_name}-{chart_version}", f"{OCI_REGISTRY_URL}/{organization}/oci")
+            container = await self.helm_push(container, f"{self.app_name}-{self.chart_version}", f"{OCI_REGISTRY_URL}/{self.organization}/oci")
 
         except Exception as e:
             print(f"[ERROR] Pipeline failed: {e}")
