@@ -89,6 +89,9 @@ class PipelineManager:
             
         # Print the tags and environment for debugging
         print(f"Tags: {self.tags}, Environment: {self.environment}")
+        # For REVIEW, set version to the first tag
+        if self.environment == Environment.REVIEW and self.tags:
+            self.version = self.tags[0]
     
     async def _build_docker_image(self) -> None:
         """
