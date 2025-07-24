@@ -186,7 +186,7 @@ class PipelineManager:
             .with_exec(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"])
             .with_exec(["git", "config", "--global", "user.name", "github-actions[bot]"])
             .with_directory("/repo", self.helm_repo_source)
-            .with_workdir(f"/repo/charts/{self.app_name}")
+            .with_workdir(f"/repo/apps/{self.app_name}")
         )
 
 
@@ -276,7 +276,7 @@ class PipelineManager:
                 username=self.username,
                 organization=self.ghcr_owner,
                 app_name=self.app_name,
-                helm_directory_path=f"charts/{self.app_name}",  # Path to the Helm chart directory
+                helm_directory_path=f"apps/{self.app_name}",  # Path to the Helm chart directory
                 chart_version=self.version,  # Chart version
                 app_version=self.version,  # Application version
             )
