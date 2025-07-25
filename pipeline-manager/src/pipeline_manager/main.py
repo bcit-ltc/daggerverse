@@ -2,7 +2,6 @@ from dagger import dag, function, object_type, DefaultPath, Directory, Secret, D
 from typing import Annotated
 import json
 from datetime import datetime
-import re
 
 # Constants
 MAIN_BRANCH = "main"
@@ -222,19 +221,12 @@ class PipelineManager:
 
         # Set version and prefix logic based on environment
         if self.environment == Environment.REVIEW:
-            match = re.match(r"(\d+)-", self.branch)
-            if match:
-                issue_num = match.group(1)
-                review_prefix = f"issue-{issue_num}-"
-                version_suffix = f"issue-{issue_num}"
-            else:
-                review_prefix = f"review-{self.branch}-"
-                version_suffix = f"review-{self.branch}"
-            self.version = f"{current_version}-{version_suffix}-{self.commit_hash}.{self.current_date_timestamp}"
+            env_prefix = f"review-{self.branch}-"
+            self.version = f"{current_version}-review.{self.branch}-{self.commit_hash}+{self.current_date_timestamp}"
             print(f"Setting version for REVIEW: {self.version}")
         elif self.environment == Environment.LATEST:
-            review_prefix = "latest-"
-            self.version = f"{current_version}-latest-{self.commit_hash}.{self.current_date_timestamp}"
+            env_prefix = "latest-"
+            self.version = f"{current_version}-rc.{self.commit_hash}+{self.current_date_timestamp}"
             print(f"Setting version for LATEST: {self.version}")
         elif self.environment == Environment.STABLE:
             print(f"STABLE version: {self.version}")
@@ -255,7 +247,7 @@ class PipelineManager:
             keys = ["ingress.host"]
             for key in keys:
                 helm_container = helm_container.with_exec([
-                    "yq", "-i", f'.{key} |= "{review_prefix}" + .', "values.yaml"
+                    "yq", "-i", f'.{key} |= "{env_prefix}" + .', "values.yaml"
                 ])
                 result = await helm_container.with_exec(["yq", f".{key}", "values.yaml"]).stdout()
                 print(f"Updated {key}: {result.strip()}")
