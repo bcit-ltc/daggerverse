@@ -20,6 +20,8 @@ class CodespaceManager:
         Main Codespace manager entry point.
         """
 
+        check_exists = await self._check_if_exists(app_name, codespace_token)   
+
         # Unwrap secret to a string value
         token_str = await codespace_token.plaintext()
         print("Received token length:", len(token_str))  # Do NOT print the token itself
@@ -44,8 +46,32 @@ class CodespaceManager:
         else:
             print(f"Failed to create codespace: {response.status_code} - {response.text}")
             raise Exception("Failed to create codespace")
-        
-    # async def create(self, 
+
+    async def _check_if_exists(self,
+        codespace_name: Annotated[str, Doc("Codespace Name")],
+        codespace_token: Annotated[Secret, Doc("Token for Codespace existence check")]
+    ) -> bool:
+        """
+        Check if a Codespace exists.
+        """
+        url = f"https://api.github.com/repos/bcit-ltc/{app_name}/codespaces/{codespace_name}"
+        headers = {
+            "Authorization": f"Bearer {codespace_token}",
+            "Accept": "application/vnd.github+json"
+        }
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            print(f"Codespace {codespace_name} exists.")
+            return True
+        elif response.status_code == 404:
+            print(f"Codespace {codespace_name} does not exist.")
+            return False
+        else:
+            print(f"Failed to check codespace existence: {response.status_code} - {response.text}")
+            raise Exception("Failed to check codespace existence")
+
+    # async def create(self,
     #     ) -> None:
     #     """
     #     Create a new Codespace.
