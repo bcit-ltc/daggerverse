@@ -27,6 +27,7 @@ class CodespaceManager:
             codespace_name, 
             app_name, 
             branch,
+            organization,
             codespace_token)
 
         if not codespace_exists:
@@ -40,6 +41,7 @@ class CodespaceManager:
         codespace_name: Annotated[str, Doc("Codespace Name")],
         app_name: Annotated[str, Doc("Application Name")],
         branch_name: Annotated[str, Doc("Current Branch")],
+        organization: Annotated[str, Doc("Organization Name")],
         codespace_token: Annotated[Secret, Doc("Token for Codespace existence check")]
     ) -> bool:
         """
@@ -57,20 +59,20 @@ class CodespaceManager:
 
         if response.status_code == 200:
             codespaces = response.json().get("codespaces", [])
-            print(json.dumps(codespaces, indent=2))  # Debugging output
+            # print(json.dumps(codespaces, indent=2))  # Debugging output
             
-
             for codespace in codespaces:
                 print(f"Checking codespace: {codespace.get('name')}")
                 print(f"Expected: {codespace_name}, Found: {codespace.get('name')}")
-                if (codespace.get("repository", {}).get("full_name") == app_name 
+                if (codespace.get("repository", {}).get("full_name") == f"{organization}/{app_name}"
                     and codespace.get("branch") == branch_name
                 ):
                     print(f"Codespace {codespace_name} exists.")
                     return True
                 else:
                     print(f"Codespace {codespace_name} does not exist.")
-                    return False
+
+            return False
         else:
             print(f"Failed to check codespace existence: {response.status_code} - {response.text}")
             raise Exception("Failed to check codespace existence")
