@@ -1,5 +1,6 @@
 import dagger
-from dagger import dag, function, object_type
+from dagger import dag, function, object_type, DefaultPath, Directory, Doc, Secret, Container
+from typing import Annotated
 import requests
 
 @object_type
