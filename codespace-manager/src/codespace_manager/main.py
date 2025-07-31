@@ -59,7 +59,7 @@ class CodespaceManager:
 
         if response.status_code == 200:
             codespaces = response.json().get("codespaces", [])
-            # print(json.dumps(codespaces, indent=2))  # Debugging output
+            print(json.dumps(codespaces, indent=2))  # Debugging output
             
             for codespace in codespaces:
                 print(f"Checking codespace: {codespace.get('name')}")
