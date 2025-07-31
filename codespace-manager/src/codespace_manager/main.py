@@ -13,8 +13,8 @@ class CodespaceManager:
         codespace_token: Annotated[Secret, Doc("Token for Codespace creation")],
         username: Annotated[str, Doc("Github Username")],  # GitHub username
         branch: Annotated[str, Doc("Current Branch")],  # Current branch
-        app_name: Annotated[str, Doc("Application Name")],  # Application name
-        codespace_name: Annotated[str | None, Doc("Codespace Name")],  # Codespace name
+        organization: Annotated[str, Doc("Organization Name")] = "bcit-ltc",  # Organization name
+        app_name: Annotated[str, Doc("Application Name")] = "SomeApp",  # Application name
             ) -> None:
         """
         Main Codespace manager entry point.
@@ -24,7 +24,7 @@ class CodespaceManager:
         token_str = await codespace_token.plaintext()
         print("Received token length:", len(token_str))  # Do NOT print the token itself
 
-        url = f"https://api.github.com/repos/bcit-ltc/{app_name}/codespaces"
+        url = f"https://api.github.com/repos/{organization}/{app_name}/codespaces"
         headers = {
             "Authorization": f"Bearer {token_str.strip()}",
             "Accept": "application/vnd.github+json"
