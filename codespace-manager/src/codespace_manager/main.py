@@ -20,9 +20,9 @@ class CodespaceManager:
         Main Codespace manager entry point.
         """
 
-        check_exists = await self._check_if_exists(app_name, codespace_token)   
+        codespace_exists = await self._check_if_exists(app_name, codespace_token)   
 
-        if not check_exists:
+        if not codespace_exists:
             print(f"Creating Codespace for {app_name} on branch {branch}...")
             await self._create_codespace(app_name, branch, organization, codespace_token)
         else:
@@ -80,13 +80,40 @@ class CodespaceManager:
             print(f"Failed to check codespace existence: {response.status_code} - {response.text}")
             raise Exception("Failed to check codespace existence")
 
-    # async def create(self,
-    #     ) -> None:
-    #     """
-    #     Create a new Codespace.
-    #     """
-    #     return None
+
+    async def _create_codespace(self,
+        app_name: Annotated[str, Doc("Application Name")],  # Application name
+        branch: Annotated[str, Doc("Current Branch")],  # Current branch
+        organization: Annotated[str, Doc("Organization Name")],  # Organization name
+        codespace_token: Annotated[Secret, Doc("Token for Codespace creation")]
+    ) -> None:
+        """
+        Create a new Codespace.
+        """
+        return None
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # async def delete(self,
     #     codespace_name: Annotated[str, Doc("Codespace Name")],  # Codespace name to delete
     #     codespace_token: Annotated[Secret, Doc("Token for Codespace deletion")],
