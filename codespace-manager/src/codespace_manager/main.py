@@ -3,6 +3,7 @@ import dagger
 from dagger import dag, function, object_type, DefaultPath, Directory, Doc, Secret, Container
 from typing import Annotated
 import requests
+import json
 
 @object_type
 class CodespaceManager:
@@ -56,6 +57,9 @@ class CodespaceManager:
 
         if response.status_code == 200:
             codespaces = response.json().get("codespaces", [])
+            print(json.dumps(codespaces, indent=2))  # Debugging output
+            
+
             for codespace in codespaces:
                 print(f"Checking codespace: {codespace.get('name')}")
                 print(f"Expected: {codespace_name}, Found: {codespace.get('name')}")
