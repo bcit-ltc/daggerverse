@@ -1,3 +1,4 @@
+from urllib import response
 import dagger
 from dagger import dag, function, object_type, DefaultPath, Directory, Doc, Secret, Container
 from typing import Annotated
@@ -20,7 +21,12 @@ class CodespaceManager:
         Main Codespace manager entry point.
         """
 
-        codespace_exists = await self._check_if_exists(app_name, codespace_token)   
+        codespace_name = f"{app_name}-{branch}"
+        codespace_exists = await self._check_if_exists(
+            codespace_name, 
+            app_name, 
+            branch,
+            codespace_token)
 
         if not codespace_exists:
             print(f"Creating Codespace for {app_name} on branch {branch}...")
@@ -55,6 +61,8 @@ class CodespaceManager:
 
     async def _check_if_exists(self,
         codespace_name: Annotated[str, Doc("Codespace Name")],
+        app_name: Annotated[str, Doc("Application Name")],
+        branch_name: Annotated[str, Doc("Current Branch")],
         codespace_token: Annotated[Secret, Doc("Token for Codespace existence check")]
     ) -> bool:
         """
@@ -71,15 +79,21 @@ class CodespaceManager:
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            print(f"Codespace {codespace_name} exists.")
-            return True
-        elif response.status_code == 404:
-            print(f"Codespace {codespace_name} does not exist.")
-            return False
+            codespaces = response.json().get("codespaces", [])
+            for codespace in codespaces:
+                if (codespace.get("repository", {}).get("full_name") == app_name 
+                    and codespace.get("branch") == branch_name
+                ):
+                    return True
+                else:
+                    print(f"Codespace {codespace_name} does not exist.")
+                    return False
         else:
             print(f"Failed to check codespace existence: {response.status_code} - {response.text}")
             raise Exception("Failed to check codespace existence")
 
+        
+        
 
     async def _create_codespace(self,
         app_name: Annotated[str, Doc("Application Name")],  # Application name
