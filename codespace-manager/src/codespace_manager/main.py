@@ -30,7 +30,7 @@ class CodespaceManager:
 
         if not codespace_exists:
             print(f"Creating Codespace for {app_name} on branch {branch}...")
-            await self._create_codespace(app_name, branch, organization, codespace_token)
+            # await self._create_codespace(app_name, branch, organization, codespace_token)
         else:
             print(f"Codespace for {app_name} already exists. No action taken.")
 
@@ -57,6 +57,8 @@ class CodespaceManager:
         if response.status_code == 200:
             codespaces = response.json().get("codespaces", [])
             for codespace in codespaces:
+                print(f"Checking codespace: {codespace.get('name')}")
+                print(f"Expected: {codespace_name}, Found: {codespace.get('name')}")
                 if (codespace.get("repository", {}).get("full_name") == app_name 
                     and codespace.get("branch") == branch_name
                 ):
