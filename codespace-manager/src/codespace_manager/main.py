@@ -24,9 +24,9 @@ class CodespaceManager:
         token_str = await codespace_token.plaintext()
         print("Received token length:", len(token_str))  # Do NOT print the token itself
 
-        url = f"https://api.github.com/repos/{app_name}/codespaces"
+        url = f"https://api.github.com/repos/bcit-ltc/{app_name}/codespaces"
         headers = {
-            "Authorization": f"Bearer {token_str}",
+            "Authorization": f"Bearer {token_str.strip()}",
             "Accept": "application/vnd.github+json"
         }
         payload = {
