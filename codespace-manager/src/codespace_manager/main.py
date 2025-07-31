@@ -20,9 +20,12 @@ class CodespaceManager:
         Main Codespace manager entry point.
         """
 
+        # Unwrap secret to a string value
+        token_str = codespace_token.plaintext()
+
         url = "https://api.github.com/repos/${{ github.repository }}/codespaces"
         headers = {
-            "Authorization": f"Bearer {codespace_token}",
+            "Authorization": f"Bearer {token_str}",
             "Accept": "application/vnd.github+json"
         }
         payload = {
