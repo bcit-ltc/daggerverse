@@ -54,11 +54,14 @@ class CodespaceManager:
         """
         Check if a Codespace exists.
         """
-        url = f"https://api.github.com/repos/bcit-ltc/{app_name}/codespaces/{codespace_name}"
+
+        token_str = await codespace_token.plaintext()
         headers = {
-            "Authorization": f"Bearer {codespace_token}",
+            "Authorization": f"Bearer {token_str.strip()}",
             "Accept": "application/vnd.github+json"
         }
+
+        url = "https://api.github.com/user/codespaces"
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
