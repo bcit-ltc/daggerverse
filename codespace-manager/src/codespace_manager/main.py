@@ -21,7 +21,7 @@ class CodespaceManager:
         """
 
         # Unwrap secret to a string value
-        token_str = codespace_token.plaintext()
+        token_str = await codespace_token.plaintext()
         print("Received token length:", len(token_str))  # Do NOT print the token itself
 
         url = "https://api.github.com/repos/${{ github.repository }}/codespaces"
