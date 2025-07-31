@@ -84,6 +84,7 @@ class CodespaceManager:
                 if (codespace.get("repository", {}).get("full_name") == app_name 
                     and codespace.get("branch") == branch_name
                 ):
+                    print(f"Codespace {codespace_name} exists.")
                     return True
                 else:
                     print(f"Codespace {codespace_name} does not exist.")
