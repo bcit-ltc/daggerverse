@@ -22,30 +22,36 @@ class CodespaceManager:
 
         check_exists = await self._check_if_exists(app_name, codespace_token)   
 
-        # Unwrap secret to a string value
-        token_str = await codespace_token.plaintext()
-        print("Received token length:", len(token_str))  # Do NOT print the token itself
-
-        url = f"https://api.github.com/repos/{organization}/{app_name}/codespaces"
-        headers = {
-            "Authorization": f"Bearer {token_str.strip()}",
-            "Accept": "application/vnd.github+json"
-        }
-        payload = {
-            "ref": f"{branch}",
-            "machine": "basicLinux32gb",
-            "display_name": f"{app_name}-{branch}"
-        }
-        response = requests.post(url, json=payload, headers=headers)
-
-        if response.status_code == 201 or response.status_code == 202:
-            codespace_url = response.json().get("web_url")
-            codespace_name = response.json().get("name")
-            print(f"Codespace Name: {codespace_name}")
-            print(f"Codespace created successfully: {codespace_url}")
+        if not check_exists:
+            print(f"Creating Codespace for {app_name} on branch {branch}...")
+            await self._create_codespace(app_name, branch, organization, codespace_token)
         else:
-            print(f"Failed to create codespace: {response.status_code} - {response.text}")
-            raise Exception("Failed to create codespace")
+            print(f"Codespace for {app_name} already exists. No action taken.")
+        
+        # # Unwrap secret to a string value
+        # token_str = await codespace_token.plaintext()
+        # print("Received token length:", len(token_str))  # Do NOT print the token itself
+
+        # url = f"https://api.github.com/repos/{organization}/{app_name}/codespaces"
+        # headers = {
+        #     "Authorization": f"Bearer {token_str.strip()}",
+        #     "Accept": "application/vnd.github+json"
+        # }
+        # payload = {
+        #     "ref": f"{branch}",
+        #     "machine": "basicLinux32gb",
+        #     "display_name": f"{app_name}-{branch}"
+        # }
+        # response = requests.post(url, json=payload, headers=headers)
+
+        # if response.status_code == 201 or response.status_code == 202:
+        #     codespace_url = response.json().get("web_url")
+        #     codespace_name = response.json().get("name")
+        #     print(f"Codespace Name: {codespace_name}")
+        #     print(f"Codespace created successfully: {codespace_url}")
+        # else:
+        #     print(f"Failed to create codespace: {response.status_code} - {response.text}")
+        #     raise Exception("Failed to create codespace")
 
     async def _check_if_exists(self,
         codespace_name: Annotated[str, Doc("Codespace Name")],
