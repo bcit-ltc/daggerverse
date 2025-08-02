@@ -9,7 +9,7 @@ import json
 @object_type
 class CodespaceManager:
     @function
-    async def create_codespace_pull_request(self,
+    async def create_codespace_by_pull_request(self,
         source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
         token: Annotated[Secret, Doc("Token for Codespace creation")],
         organization: Annotated[str, Doc("Organization Name")],  # Organization name
@@ -78,7 +78,7 @@ class CodespaceManager:
 
 
     @function
-    async def delete_codespace_on_pr_close(self,
+    async def delete_codespace_by_pull_request(self,
         source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
         token: Annotated[Secret, Doc("Token for Codespace creation")],
         organization: Annotated[str, Doc("Organization Name")],  # Organization name
