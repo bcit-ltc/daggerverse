@@ -36,6 +36,13 @@ class CodespaceManager:
         response.json().get("codespaces", [])
         for codespace in response.json().get("codespaces", []):
             print(f"Checking codespace: {codespace.get('display_name')}")
+            if codespace_name in codespace.get("display_name", ""):
+                print(f"Codespace {codespace_name} already exists.")
+                print(f"Codespace URL: {codespace.get('web_url')}")
+                print(f"Codespace Name: {codespace.get('name')}")
+                print(f"Branch: {codespace.get('branch')}")
+                print(f"Status: {codespace.get('status')}")
+                print(f"Created at: {codespace.get('created_at')}")
 
 
         return None
