@@ -107,7 +107,7 @@ class CodespaceManager:
             for codespace in response.json().get("codespaces", []):
                 print(f"Checking codespace: {codespace.get('display_name')}")
                 if codespace_name in codespace.get("display_name", ""):
-                    print(f"Codespace {codespace_name} already exists.")
+                    print(f"Codespace {codespace_name} found")
                     print(f"Codespace URL: {codespace.get('web_url')}")
                     print(f"Codespace Name: {codespace.get('name')}")
                     print(f"Branch: {codespace.get('git_status', {}).get('ref', '')}")
@@ -115,7 +115,7 @@ class CodespaceManager:
 
                     # Delete the Codespace
                     delete_url = f"https://api.github.com/user/codespaces/{codespace.get('name')}"
-                    print(f"Deleting Codespace: {delete_url}")
+                    print(f"Deleting Codespace {codespace_name} with url: {delete_url}")
                     delete_response = requests.delete(delete_url, headers=headers)
                     if delete_response.status_code == 202:
                         print(f"Codespace {codespace_name} deleted successfully.")
