@@ -31,21 +31,26 @@ class CodespaceManager:
         codespace_name = f"PR-{pull_request_number}"
         url = f"https://api.github.com/repos/{organization}/{repo_name}/codespaces"
         response = requests.get(url, headers=headers)
+        # print(json.dumps(response.json(), indent=2))  # Debugging output
+        # check if the codespace already exists
+        response.json().get("codespaces", [])
+        for codespace in response.json().get("codespaces", []):
+            print(f"Checking codespace: {codespace.get('display_name')}")
 
-        print(json.dumps(response.json(), indent=2))  # Debugging output
 
-        if response.status_code == 200:
-            print(f"Codespace {codespace_name} already exists.")
-            print(f"Codespace URL: {response.json().get('web_url')}")
-            print(f"Codespace Name: {response.json().get('name')}")
-            print(f"Branch: {response.json().get('branch')}")
-            print(f"Status: {response.json().get('status')}")
-            print(f"Created at: {response.json().get('created_at')}")
-            return None
-        else:
-            print (f"Failed to check codespace existence: {response.status_code} - {response.text}")
-            print(f"Codespace {codespace_name} does not exist. Proceeding to create a new one.")
-            return None
+        return None
+        # if response.status_code == 200:
+        #     print(f"Codespace {codespace_name} already exists.")
+        #     print(f"Codespace URL: {response.json().get('web_url')}")
+        #     print(f"Codespace Name: {response.json().get('name')}")
+        #     print(f"Branch: {response.json().get('branch')}")
+        #     print(f"Status: {response.json().get('status')}")
+        #     print(f"Created at: {response.json().get('created_at')}")
+        #     return None
+        # else:
+        #     print (f"Failed to check codespace existence: {response.status_code} - {response.text}")
+        #     print(f"Codespace {codespace_name} does not exist. Proceeding to create a new one.")
+        #     return None
 
 
         url = f"https://api.github.com/repos/{organization}/{repo_name}/pulls/{pull_request_number}/codespaces"
