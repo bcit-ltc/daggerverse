@@ -40,8 +40,7 @@ class CodespaceManager:
                 print(f"Codespace {codespace_name} already exists.")
                 print(f"Codespace URL: {codespace.get('web_url')}")
                 print(f"Codespace Name: {codespace.get('name')}")
-                print(f"Branch: {codespace.get('branch')}")
-                print(f"Status: {codespace.get('status')}")
+                print(f"Branch: {codespace.get('git_status', {}).get('ref', '')}")
                 print(f"Created at: {codespace.get('created_at')}")
 
 
