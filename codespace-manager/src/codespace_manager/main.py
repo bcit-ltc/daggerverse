@@ -27,7 +27,6 @@ class CodespaceManager:
             "Accept": "application/vnd.github+json"
         }
         payload = {
-            "ref": f"{branch_name}",
             "machine": "basicLinux32gb",
             "display_name": f"{repo_name}-{pull_request_number}-{branch_name}"
         }
