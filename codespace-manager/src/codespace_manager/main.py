@@ -39,6 +39,9 @@ class CodespaceManager:
             print(f"Status: {response.json().get('status')}")
             print(f"Created at: {response.json().get('created_at')}")
             return None
+        else:
+            print (f"Failed to check codespace existence: {response.status_code} - {response.text}")
+            print(f"Codespace {codespace_name} does not exist. Proceeding to create a new one.")
 
 
         url = f"https://api.github.com/repos/{organization}/{repo_name}/pulls/{pull_request_number}/codespaces"
