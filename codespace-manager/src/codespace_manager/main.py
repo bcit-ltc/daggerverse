@@ -24,7 +24,8 @@ class CodespaceManager:
         url = f"https://api.github.com/repos/{organization}/{repo_name}/pulls/{pull_request_number}/codespaces"
         headers = {
             "Authorization": f"Bearer {token_str.strip()}",
-            "Accept": "application/vnd.github+json"
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
         }
         payload = {
             "machine": "basicLinux32gb",
