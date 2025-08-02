@@ -7,7 +7,6 @@ import json
 
 @object_type
 class CodespaceManager:
-
     @function
     async def create_codespace_pull_request(self,
         source: Annotated[Directory, Doc("Source directory"), DefaultPath(".")], # source directory
@@ -19,6 +18,8 @@ class CodespaceManager:
         ) -> None:
         """
         Create a Codespace from a pull request.
+        Check if the Codespace already exists, and if not, create a new one.
+        Assumes there can only be one Codespace per pull request.
         """
         token_str = await token.plaintext()
         headers = {
@@ -27,38 +28,26 @@ class CodespaceManager:
             "X-GitHub-Api-Version": "2022-11-28"
         }
 
-        #check if the Codespace already exists
+        # Check if the Codespace already exists
         codespace_name = f"PR-{pull_request_number}"
         url = f"https://api.github.com/repos/{organization}/{repo_name}/codespaces"
         response = requests.get(url, headers=headers)
-        # print(json.dumps(response.json(), indent=2))  # Debugging output
-        # check if the codespace already exists
         response.json().get("codespaces", [])
-        for codespace in response.json().get("codespaces", []):
-            print(f"Checking codespace: {codespace.get('display_name')}")
-            if codespace_name in codespace.get("display_name", ""):
-                print(f"Codespace {codespace_name} already exists.")
-                print(f"Codespace URL: {codespace.get('web_url')}")
-                print(f"Codespace Name: {codespace.get('name')}")
-                print(f"Branch: {codespace.get('git_status', {}).get('ref', '')}")
-                print(f"Created at: {codespace.get('created_at')}")
+        if response.status_code == 200:
+            for codespace in response.json().get("codespaces", []):
+                print(f"Checking codespace: {codespace.get('display_name')}")
+                if codespace_name in codespace.get("display_name", ""):
+                    print(f"Codespace {codespace_name} already exists.")
+                    print(f"Codespace URL: {codespace.get('web_url')}")
+                    print(f"Codespace Name: {codespace.get('name')}")
+                    print(f"Branch: {codespace.get('git_status', {}).get('ref', '')}")
+                    print(f"Created at: {codespace.get('created_at')}")
+                    return None
+        else:
+            print(f"Failed to check codespace existence: {response.status_code} - {response.text}")
+            raise Exception("Failed to check codespace existence")
 
-
-        return None
-        # if response.status_code == 200:
-        #     print(f"Codespace {codespace_name} already exists.")
-        #     print(f"Codespace URL: {response.json().get('web_url')}")
-        #     print(f"Codespace Name: {response.json().get('name')}")
-        #     print(f"Branch: {response.json().get('branch')}")
-        #     print(f"Status: {response.json().get('status')}")
-        #     print(f"Created at: {response.json().get('created_at')}")
-        #     return None
-        # else:
-        #     print (f"Failed to check codespace existence: {response.status_code} - {response.text}")
-        #     print(f"Codespace {codespace_name} does not exist. Proceeding to create a new one.")
-        #     return None
-
-
+        # Create a new Codespace
         url = f"https://api.github.com/repos/{organization}/{repo_name}/pulls/{pull_request_number}/codespaces"
         body = {
             # "location": # The requested location for a new codespace. Best efforts are made to respect this upon creation. Assigned by IP if not provided.
