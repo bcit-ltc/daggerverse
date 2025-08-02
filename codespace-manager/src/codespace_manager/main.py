@@ -112,7 +112,7 @@ class CodespaceManager:
                     print(f"Created at: {codespace.get('created_at')}")
 
                     # Delete the Codespace
-                    delete_url = f"https://api.github.com/{organization}/codespaces/{codespace.get('name')}"
+                    delete_url = f"https://api.github.com/user/codespaces/{codespace.get('name')}"
                     print(f"Deleting Codespace: {delete_url}")
                     delete_response = requests.delete(delete_url, headers=headers)
                     if delete_response.status_code == 202:
