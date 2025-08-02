@@ -27,11 +27,19 @@ class CodespaceManager:
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28"
         }
-        payload = {
-            "machine": "basicLinux32gb",
+        body = {
+            # "location": # The requested location for a new codespace. Best efforts are made to respect this upon creation. Assigned by IP if not provided.
+            # "geo":
+            # "client_ip": # IP for location auto-detection when proxying a request
+            # "machine": "basicLinux32gb", # Machine type to use for this codespace
+            # "devcontainer_path": source.path,  # Path to devcontainer.json config to use for this codespace
+            # "multi_repo_permissions_opt_out": True, # Whether to authorize requested permissions from devcontainer.json
+            # "working_directory": f"/home/codespace/workspace/{repo_name}",  # Working directory for the codespace
+            # "idle_timeout_minutes": 30,  # Idle timeout for the codespace
             "display_name": f"{repo_name}-{pull_request_number}-{branch_name}"
+            # "retention_period_minutes": 60,  # Retention period for the codespace
         }
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=body, headers=headers)
         print(f"Creating Codespace for PR #{pull_request_number} on branch {branch_name}...")
 
         if response.status_code in [201, 202]:
