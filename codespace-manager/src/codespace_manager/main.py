@@ -96,12 +96,14 @@ class CodespaceManager:
             "X-GitHub-Api-Version": "2022-11-28"
         }
 
-        # Check if the Codespace already exists
+        # Check if the Codespace exists and find the unique name from the display name
+        # The display name is expected to be in the format "PR-{pull_request_number}"
         codespace_name = f"PR-{pull_request_number}"
         url = f"https://api.github.com/repos/{organization}/{repo_name}/codespaces"
         response = requests.get(url, headers=headers)
         response.json().get("codespaces", [])
         if response.status_code == 200:
+            # delete all codespaces with the name PR-{pull_request_number}
             for codespace in response.json().get("codespaces", []):
                 print(f"Checking codespace: {codespace.get('display_name')}")
                 if codespace_name in codespace.get("display_name", ""):
@@ -117,10 +119,10 @@ class CodespaceManager:
                     delete_response = requests.delete(delete_url, headers=headers)
                     if delete_response.status_code == 202:
                         print(f"Codespace {codespace_name} deleted successfully.")
-                        return None
                     else:
                         print(f"Failed to delete codespace: {delete_response.status_code} - {delete_response.text}")
                         raise Exception("Failed to delete codespace")
+            return None
         else:
             print(f"Failed to check codespace existence: {response.status_code} - {response.text}")
             raise Exception("Failed to check codespace existence")
