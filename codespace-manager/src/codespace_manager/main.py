@@ -21,12 +21,27 @@ class CodespaceManager:
         Create a Codespace from a pull request.
         """
         token_str = await token.plaintext()
-        url = f"https://api.github.com/repos/{organization}/{repo_name}/pulls/{pull_request_number}/codespaces"
         headers = {
             "Authorization": f"Bearer {token_str.strip()}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28"
         }
+
+        #check if the Codespace already exists
+        codespace_name = f"PR-{pull_request_number}"
+        url = f"https://api.github.com/repos/{organization}/{repo_name}/codespaces/{codespace_name}"
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            print(f"Codespace {codespace_name} already exists.")
+            print(f"Codespace URL: {response.json().get('web_url')}")
+            print(f"Codespace Name: {response.json().get('name')}")
+            print(f"Branch: {response.json().get('branch')}")
+            print(f"Status: {response.json().get('status')}")
+            print(f"Created at: {response.json().get('created_at')}")
+            return None
+
+
+        url = f"https://api.github.com/repos/{organization}/{repo_name}/pulls/{pull_request_number}/codespaces"
         body = {
             # "location": # The requested location for a new codespace. Best efforts are made to respect this upon creation. Assigned by IP if not provided.
             # "geo":
@@ -36,7 +51,7 @@ class CodespaceManager:
             # "multi_repo_permissions_opt_out": True, # Whether to authorize requested permissions from devcontainer.json
             # "working_directory": f"/home/codespace/workspace/{repo_name}",  # Working directory for the codespace
             # "idle_timeout_minutes": 30,  # Idle timeout for the codespace
-            "display_name": f"{repo_name}-{pull_request_number}-{branch_name}"
+            "display_name": f"PR-{pull_request_number}"
             # "retention_period_minutes": 60,  # Retention period for the codespace
         }
         response = requests.post(url, json=body, headers=headers)
